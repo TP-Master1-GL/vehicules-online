@@ -1,155 +1,119 @@
 package com.vehicules.controllers;
 
-import com.vehicules.services.DocumentService;
 import com.vehicules.patterns.builder.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/documents")
-@Tag(name = "Documents", description = "Génération des liasses de documents")
-@CrossOrigin(origins = "http://localhost:5173") // Pour Vite/React
+@CrossOrigin(origins = "*")
 public class DocumentController {
-
-    private final DocumentService documentService;
-    private final LiasseDirector liasseDirector;
-
-    public DocumentController(DocumentService documentService) {
-        this.documentService = documentService;
-        this.liasseDirector = new LiasseDirector();
-    }
-
-    @Operation(summary = "Générer une liasse PDF complète")
-    @PostMapping("/generate-pdf")
-    public ResponseEntity<Map<String, Object>> generatePdfLiasse(@RequestBody DocumentRequest request) {
+    
+    @PostMapping("/generate")
+    public Map<String, Object> generateDocuments(@RequestBody DocumentRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        
         try {
-            // Utilisation du Builder PDF
-            PdfBuilder pdfBuilder = new PdfBuilder();
-            liasseDirector.setBuilder(pdfBuilder);
-            
-            // Construction selon le type
-            if ("complete".equals(request.getLiasseType())) {
-                liasseDirector.constructLiasseComplete(request.getOrderId());
+            // Choisir le builder en fonction du format
+            DocumentBuilder builder;
+            if ("pdf".equalsIgnoreCase(request.getFormat())) {
+                builder = new PdfBuilder();
             } else {
-                liasseDirector.constructLiasseMinimale(request.getOrderId());
+                builder = new HtmlBuilder();
             }
             
-            // Récupération du résultat
-            LiassePDF liasse = pdfBuilder.getLiasse();
-            byte[] pdfContent = liasse.generer();
+            // Utiliser le directeur
+            Directeur directeur = new Directeur(builder);
             
-            // Sauvegarde en base
-            String documentId = documentService.saveDocument(
-                request.getOrderId(), 
-                pdfContent, 
-                "PDF", 
-                "liasse_complete"
+            // Construire la liasse
+            LiasseDocuments liasse = directeur.construireLiasseComplete(
+                request.getNumeroSerie(),
+                request.getClientNom(),
+                request.getVehiculeModele(),
+                "Concession XYZ", // Vendeur par défaut
+                request.getClientNom(),
+                "CMD-" + System.currentTimeMillis(),
+                request.getMontant()
             );
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "documentId", documentId,
-                "message", "Liasse PDF générée avec succès",
-                "size", pdfContent.length
-            ));
+            // Préparer la réponse
+            response.put("success", true);
+            response.put("type", liasse.getType());
+            response.put("contenu", liasse.getContenu());
+            response.put("timestamp", System.currentTimeMillis());
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", e.getMessage()
-            ));
+            response.put("success", false);
+            response.put("error", e.getMessage());
         }
+        
+        return response;
     }
-
-    @Operation(summary = "Générer une liasse HTML")
-    @PostMapping("/generate-html")
-    public ResponseEntity<Map<String, Object>> generateHtmlLiasse(@RequestBody DocumentRequest request) {
-        try {
-            // Utilisation du Builder HTML
-            HtmlBuilder htmlBuilder = new HtmlBuilder();
-            liasseDirector.setBuilder(htmlBuilder);
-            
-            if ("complete".equals(request.getLiasseType())) {
-                liasseDirector.constructLiasseComplete(request.getOrderId());
-            } else {
-                liasseDirector.constructLiasseMinimale(request.getOrderId());
-            }
-            
-            LiasseHTML liasse = htmlBuilder.getLiasse();
-            String htmlContent = liasse.getHtmlContent();
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "html", htmlContent,
-                "message", "Liasse HTML générée avec succès"
-            ));
-            
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", e.getMessage()
-            ));
-        }
-    }
-
-    @Operation(summary = "Télécharger un document généré")
-    @GetMapping("/{documentId}/download")
-    public ResponseEntity<Resource> downloadDocument(@PathVariable String documentId) {
-        try {
-            byte[] documentContent = documentService.getDocumentContent(documentId);
-            
-            ByteArrayResource resource = new ByteArrayResource(documentContent);
-            
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, 
-                       "attachment; filename=\"document_" + documentId + ".pdf\"")
-                .contentType(MediaType.APPLICATION_PDF)
-                .contentLength(documentContent.length)
-                .body(resource);
-                
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @Operation(summary = "Lister les documents d'une commande")
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<Map<String, Object>> getOrderDocuments(@PathVariable String orderId) {
-        try {
-            var documents = documentService.getDocumentsByOrder(orderId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "orderId", orderId,
-                "documents", documents,
-                "count", documents.size()
-            ));
-            
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", e.getMessage()
-            ));
-        }
-    }
-}
-
-// Classe de requête
-class DocumentRequest {
-    private String orderId;
-    private String liasseType; // "complete" ou "minimale"
     
-    // Getters et setters
-    public String getOrderId() { return orderId; }
-    public void setOrderId(String orderId) { this.orderId = orderId; }
-    public String getLiasseType() { return liasseType; }
-    public void setLiasseType(String liasseType) { this.liasseType = liasseType; }
+    @PostMapping("/generate-minimal")
+    public Map<String, Object> generateMinimalDocument(@RequestBody MinimalDocumentRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            DocumentBuilder builder = "pdf".equalsIgnoreCase(request.getFormat()) 
+                ? new PdfBuilder() 
+                : new HtmlBuilder();
+            
+            Directeur directeur = new Directeur(builder);
+            LiasseDocuments liasse = directeur.construireLiasseMinimale(
+                request.getNumeroSerie(),
+                request.getClientNom(),
+                request.getVehiculeModele()
+            );
+            
+            response.put("success", true);
+            response.put("type", liasse.getType());
+            response.put("contenu", liasse.getContenu());
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+        }
+        
+        return response;
+    }
+    
+    // Classes internes pour les requêtes
+    public static class DocumentRequest {
+        private String format; // pdf ou html
+        private String numeroSerie;
+        private String clientNom;
+        private String vehiculeModele;
+        private double montant;
+        
+        // Getters et setters
+        public String getFormat() { return format; }
+        public void setFormat(String format) { this.format = format; }
+        public String getNumeroSerie() { return numeroSerie; }
+        public void setNumeroSerie(String numeroSerie) { this.numeroSerie = numeroSerie; }
+        public String getClientNom() { return clientNom; }
+        public void setClientNom(String clientNom) { this.clientNom = clientNom; }
+        public String getVehiculeModele() { return vehiculeModele; }
+        public void setVehiculeModele(String vehiculeModele) { this.vehiculeModele = vehiculeModele; }
+        public double getMontant() { return montant; }
+        public void setMontant(double montant) { this.montant = montant; }
+    }
+    
+    public static class MinimalDocumentRequest {
+        private String format;
+        private String numeroSerie;
+        private String clientNom;
+        private String vehiculeModele;
+        
+        // Getters et setters
+        public String getFormat() { return format; }
+        public void setFormat(String format) { this.format = format; }
+        public String getNumeroSerie() { return numeroSerie; }
+        public void setNumeroSerie(String numeroSerie) { this.numeroSerie = numeroSerie; }
+        public String getClientNom() { return clientNom; }
+        public void setClientNom(String clientNom) { this.clientNom = clientNom; }
+        public String getVehiculeModele() { return vehiculeModele; }
+        public void setVehiculeModele(String vehiculeModele) { this.vehiculeModele = vehiculeModele; }
+    }
 }

@@ -1,23 +1,27 @@
 package com.vehicules.patterns.builder;
 
 public class LiassePDF implements LiasseDocuments {
-    private final byte[] pdfContent;
+    private StringBuilder contenu = new StringBuilder();
     
-    public LiassePDF(byte[] pdfContent) {
-        this.pdfContent = pdfContent;
+    public void ajouterPage(String titre, String contenuPage) {
+        contenu.append("=== PDF Page: ").append(titre).append(" ===\n");
+        contenu.append(contenuPage).append("\n\n");
     }
     
     @Override
-    public byte[] generer() {
-        return pdfContent;
+    public String getContenu() {
+        return contenu.toString();
     }
     
     @Override
-    public String afficher() {
-        return "Document PDF - Taille: " + pdfContent.length + " octets";
+    public void afficher() {
+        System.out.println("=== DOCUMENT PDF ===");
+        System.out.println(contenu);
+        System.out.println("====================");
     }
     
-    public int getTaille() {
-        return pdfContent.length;
+    @Override
+    public String getType() {
+        return "PDF";
     }
 }

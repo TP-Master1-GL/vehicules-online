@@ -5,10 +5,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 
+
+
 @SpringBootApplication(exclude = {
     DataSourceAutoConfiguration.class,
     HibernateJpaAutoConfiguration.class
-})
+} , 
+scanBasePackages = "com.vehicules"
+)
 public class VehiculesApplication {
     public static void main(String[] args) {
         SpringApplication.run(VehiculesApplication.class, args);

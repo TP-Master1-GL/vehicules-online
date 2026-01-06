@@ -1,23 +1,30 @@
+
 package com.vehicules.patterns.builder;
 
 public class LiasseHTML implements LiasseDocuments {
-    private final String htmlContent;
+    private StringBuilder contenu = new StringBuilder();
     
-    public LiasseHTML(String htmlContent) {
-        this.htmlContent = htmlContent;
+    public void ajouterSection(String titre, String contenuSection) {
+        contenu.append("<div class='section'>\n");
+        contenu.append("  <h2>").append(titre).append("</h2>\n");
+        contenu.append("  <p>").append(contenuSection).append("</p>\n");
+        contenu.append("</div>\n\n");
     }
     
     @Override
-    public byte[] generer() {
-        return htmlContent.getBytes();
+    public String getContenu() {
+        return "<!DOCTYPE html>\n<html>\n<body>\n" + contenu.toString() + "\n</body>\n</html>";
     }
     
     @Override
-    public String afficher() {
-        return htmlContent;
+    public void afficher() {
+        System.out.println("=== DOCUMENT HTML ===");
+        System.out.println(contenu);
+        System.out.println("=====================");
     }
     
-    public String getHtmlContent() {
-        return htmlContent;
+    @Override
+    public String getType() {
+        return "HTML";
     }
 }
