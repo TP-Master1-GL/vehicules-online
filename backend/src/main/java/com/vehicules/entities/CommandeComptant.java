@@ -1,9 +1,16 @@
 package com.vehicules.entities;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
+import javax.persistence.Entity;
 
 @Entity
-@DiscriminatorValue("COMPTANT")
 public class CommandeComptant extends Commande {
+    
+    // Constructeurs
+    public CommandeComptant() {
+        super();
+    }
+    
+    public CommandeComptant(String numero, double montant) {
+        super(numero, montant);
+    }
 }
