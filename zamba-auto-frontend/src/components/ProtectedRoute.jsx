@@ -1,0 +1,28 @@
+import React from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+
+const ProtectedRoute = ({ children, requireCompany = false }) => {
+  const { isAuthenticated, user, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (requireCompany && user.customer_type !== 'company') {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
+export default ProtectedRoute
