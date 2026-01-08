@@ -30,7 +30,7 @@ public abstract class Document {
     }
     
     // Méthodes abstraites (à implémenter par les sous-classes)
-    public abstract void genererContent();
+    public abstract void genererContenu();
     
     // Getters et Setters
     public String getId() {
@@ -47,6 +47,10 @@ public abstract class Document {
     
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getContenu() {
+        return content;
     }
     
     public String getContent() {

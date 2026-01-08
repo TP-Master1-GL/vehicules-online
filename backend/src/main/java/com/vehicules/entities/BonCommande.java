@@ -26,7 +26,7 @@ public class BonCommande extends Document {
     }
     
     @Override
-    public void genererContent() {
+    public void genererContenu() {
         StringBuilder sb = new StringBuilder();
         sb.append("BON DE COMMANDE\n");
         sb.append("===============\n\n");
