@@ -22,7 +22,7 @@ public class HtmlGenerator {
                "</html>";
     }
     
-    public void saveHtml(String htmlContent, String filePath) {
+    public void saveToFile(String htmlContent, String filePath) {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(htmlContent);
         } catch (IOException e) {
