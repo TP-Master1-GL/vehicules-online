@@ -17,3 +17,9 @@ public class CommandeFactory {
         throw new IllegalArgumentException("Type de commande inconnu");
     }
 }
+import com.vehicules.core.entities.Client;
+import com.vehicules.core.entities.Commande;
+
+public interface CommandeFactory {
+    Commande creerCommande(Client client);
+}
