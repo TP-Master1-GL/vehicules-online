@@ -39,5 +39,5 @@ public class CalculCommandeFR extends CalculCommandeTemplate {
     protected double calculeTotalLivraison(double total, Commande commande) {
         // Frais de livraison fixes pour la France
         return total + FRAIS_LIVRAISON_FR;
-    }
+
 }

@@ -1,3 +1,4 @@
+
 // src/main/java/com/vehicules/patterns/template/CalculCommandeBE.java
 package com.vehicules.patterns.template;
 
@@ -24,4 +25,5 @@ public class CalculCommandeBE extends CalculCommandeTemplate {
     protected double calculeTotalLivraison(double total, Commande commande) {
         return total + FRAIS_LIVRAISON_BE;
     }
+
 }

@@ -37,4 +37,5 @@ public abstract class CalculCommandeTemplate {
     protected abstract double appliquerTaxes(double sousTotal, Commande commande);
     protected abstract double appliquerRemises(double total, Commande commande);
     protected abstract double calculeTotalLivraison(double total, Commande commande);
+
 }

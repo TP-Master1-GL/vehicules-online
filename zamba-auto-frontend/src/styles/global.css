@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --orange-primary: #F57C00;
+  --blue-primary: #1E4ED8;
+  --dark-text: #1A1A1A;
+  --light-gray: #F5F5F5;
+  --white: #FFFFFF;
+  --gray-border: #E0E0E0;
+  --success-green: #10B981;
+  --warning-red: #EF4444;
+  --info-blue: #3B82F6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--dark-text);
+  background-color: var(--white);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+}
+
+/* Pattern africain */
+.african-pattern-top {
+  background-image: url('/african-pattern-border.png');
+  background-repeat: repeat-x;
+  background-position: top;
+  height: 20px;
+  width: 100%;
+}
+
+.african-pattern-bottom {
+  background-image: url('/african-pattern-border.png');
+  background-repeat: repeat-x;
+  background-position: bottom;
+  height: 20px;
+  width: 100%;
+}
+
+/* Boutons spécifiques ZAMBA */
+.btn-zamba-orange {
+  background-color: var(--orange-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-zamba-orange:hover {
+  background-color: #E57100;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 124, 0, 0.3);
+}
+
+.btn-zamba-blue {
+  background-color: var(--blue-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-zamba-blue:hover {
+  background-color: #1A43B5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 78, 216, 0.3);
+}
+
+/* Cartes véhicules */
+.vehicle-card-zamba {
+  border: 1px solid var(--gray-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: white;
+}
+
+.vehicle-card-zamba:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Badges */
+.badge-clearance {
+  background-color: var(--warning-red);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-promo {
+  background-color: var(--success-green);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-new {
+  background-color: var(--info-blue);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Formulaires */
+.form-input-zamba {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  background: white;
+}
+
+.form-input-zamba:focus {
+  outline: none;
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 0 3px rgba(245, 124, 0, 0.1);
+}
+
+/* Layout */
+.container-zamba {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+/* Panier */
+.cart-item-zamba {
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  margin-bottom: 16px;
+}
+
+/* Options véhicule */
+.option-selector-zamba {
+  padding: 12px;
+  border: 2px solid var(--gray-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.option-selector-zamba:hover {
+  border-color: var(--orange-primary);
+}
+
+.option-selector-zamba.selected {
+  border-color: var(--orange-primary);
+  background-color: rgba(245, 124, 0, 0.05);
+}
+
+/* Compatibilité warning */
+.compatibility-warning {
+  color: var(--warning-red);
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 4px solid var(--warning-red);
+  margin: 8px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container-zamba {
+    padding: 0 15px;
+  }
+  
+  .btn-zamba-orange, .btn-zamba-blue {
+    padding: 10px 20px;
+    font-size: 14px;
+    width: 100%;
+  }
+  
+  .vehicle-card-zamba {
+    margin-bottom: 20px;
+  }
+}
+
+/* Effet de fade-in pour l'image de fond */
+.hero-section {
+  animation: fadeInBackground 1.5s ease-out;
+}
+
+@keyframes fadeInBackground {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 70vh;
+    background-attachment: scroll; /* Désactive parallax sur mobile */
+  }
+  
+  .hero-section h1 {
+    font-size: 2.5rem;
+  }
+}
+
+/* Amélioration de la lisibilité */
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
