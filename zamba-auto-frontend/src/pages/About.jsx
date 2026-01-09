@@ -72,7 +72,11 @@ const About = () => {
             </div>
             <div className="flex justify-center">
               <div className="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center">
-                <div className="text-6xl">🚗</div>
+                <div className="text-6xl"> <img 
+              src="/logo-zamba.png" 
+              alt="ZAMBA Auto" 
+              className="h-full w-full"
+            /></div>
               </div>
             </div>
           </div>

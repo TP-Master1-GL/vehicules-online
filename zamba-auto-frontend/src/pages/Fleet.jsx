@@ -43,7 +43,7 @@ const Fleet = () => {
                   <input type="range" min="10000" max="500000" step="10000" className="w-full" />
                 </div>
                 
-                <button type="submit" className="btn btn-primary w-full mt-6">
+                <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-orange-500 hover:from-orange-700 hover:to-orange-700 text-white font-bold py-3.5 px-6 rounded-lg transition-all hover:shadow-lg disabled:opacity-70">
                   Demander un devis
                 </button>
               </form>

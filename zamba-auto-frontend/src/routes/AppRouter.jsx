@@ -19,6 +19,7 @@ const Checkout = lazy(() => import('../pages/Checkout'))
 const Fleet = lazy(() => import('../pages/Fleet'))
 const FleetDashboard = lazy(() => import('../pages/FleetDashboard'))
 const Contact = lazy(() => import('../pages/Contact'))
+const Documents = lazy(() => import('../pages/Documents'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const About = lazy(() => import('../pages/About'))
@@ -140,6 +141,16 @@ const router = createBrowserRouter([
           <Suspense fallback={<LoadingSpinner />}>
             <ProtectedRoute requireCompany>
               <FleetDashboard />
+            </ProtectedRoute>
+          </Suspense>
+        )
+      },
+      {
+        path: 'documents',
+        element: (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProtectedRoute>
+              <Documents />
             </ProtectedRoute>
           </Suspense>
         )

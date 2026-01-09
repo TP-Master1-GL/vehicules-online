@@ -29,6 +29,10 @@ const Header = () => {
     { path: '/contact', label: 'Contact' }
   ]
 
+  const authenticatedMenuItems = [
+    { path: '/documents', label: 'Mes Documents' }
+  ]
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -45,7 +49,21 @@ const Header = () => {
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
             {menuItems.map((item) => (
-              <Link 
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`font-medium text-lg transition-colors ${
+                  isActive(item.path)
+                    ? 'text-orange-500 border-b-2 border-orange-500'
+                    : 'text-blue-900 hover:text-orange-500'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {/* Menu pour utilisateurs connectés */}
+            {user && authenticatedMenuItems.map((item) => (
+              <Link
                 key={item.path}
                 to={item.path}
                 className={`font-medium text-lg transition-colors ${
@@ -84,13 +102,21 @@ const Header = () => {
                     </span>
                   </button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 hidden group-hover:block z-50 border">
-                    <Link 
-                      to="/dashboard"
+                    <Link
+                      to="/documents"
                       className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                     >
-                      Tableau de bord
+                      Mes Documents
                     </Link>
-                    <button 
+                    {user?.customer_type === 'company' && (
+                      <Link
+                        to="/entreprise/dashboard"
+                        className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                      >
+                        Tableau de bord entreprise
+                      </Link>
+                    )}
+                    <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                     >
@@ -152,14 +178,23 @@ const Header = () => {
               {/* Mobile Auth */}
               {user ? (
                 <div className="mt-4 pt-4 border-t">
-                  <Link 
-                    to="/dashboard"
+                  <Link
+                    to="/documents"
                     className="block px-4 py-3 text-blue-900 hover:bg-gray-50"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Tableau de bord
+                    Mes Documents
                   </Link>
-                  <button 
+                  {user?.customer_type === 'company' && (
+                    <Link
+                      to="/entreprise/dashboard"
+                      className="block px-4 py-3 text-blue-900 hover:bg-gray-50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Tableau de bord entreprise
+                    </Link>
+                  )}
+                  <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-3 text-blue-900 hover:bg-gray-50"
                   >

@@ -22,7 +22,7 @@ const Home = () => {
             url('/hero-image.jpg')
           `,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          // backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center top'
 
