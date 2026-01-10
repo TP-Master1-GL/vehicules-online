@@ -1,10 +1,9 @@
 package com.vehicules.patterns.builder;
 
-import java.util.List;
-
 public interface DocumentBuilder {
-    void ajouterDemandeImmatriculation(String contenu);
-    void ajouterCertificatCession(String contenu);
-    void ajouterBonCommande(String contenu);
-    List<String> getLiasse();
+    void ajouterDemandeImmatriculation(String numeroSerie, String clientNom, String vehiculeModele);
+    void ajouterCertificatCession(String vendeur, String acheteur, String vehiculeInfo);
+    void ajouterBonCommande(String commandeId, String client, double montant);
+    Object getLiasse();
+    void reset();
 }
