@@ -5,6 +5,7 @@ import com.vehicules.api.dto.auth.LoginRequestDTO;
 import com.vehicules.api.dto.auth.RegisterRequestDTO;
 import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.ClientParticulier;
+import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,19 +31,43 @@ public class AuthenticationService {
 
     @Transactional
     public AuthenticationResponseDTO register(RegisterRequestDTO request) {
+        // Vérifications supplémentaires
+        if (request.getNom() == null || request.getNom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le nom est obligatoire");
+        }
+        if (request.getPrenom() == null || request.getPrenom().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le prénom est obligatoire");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("L'email est obligatoire");
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins 6 caractères");
+        }
+        if (request.getTelephone() == null || request.getTelephone().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le téléphone est obligatoire");
+        }
+        if (request.getNumeroPermis() == null || request.getNumeroPermis().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le numéro de permis est obligatoire");
+        }
+
         // Vérifier si l'email existe déjà
         if (clientRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("L'email est déjà utilisé");
+            throw new IllegalArgumentException("L'email est déjà utilisé");
         }
 
         // Créer un nouveau client
         ClientParticulier client = new ClientParticulier();
-        client.setNom(request.getNom());
-        client.setPrenom(request.getPrenom());
-        client.setEmail(request.getEmail());
-        client.setTelephone(request.getTelephone());
+        client.setNom(request.getNom().trim());
+        client.setPrenom(request.getPrenom().trim());
+        client.setEmail(request.getEmail().trim().toLowerCase());
+        client.setTelephone(request.getTelephone().trim());
+        client.setAdresse(request.getAdresse() != null && !request.getAdresse().trim().isEmpty()
+            ? request.getAdresse().trim()
+            : "Adresse non spécifiée");
+        client.setNumeroPermis(request.getNumeroPermis().trim());
         client.setPassword(passwordEncoder.encode(request.getPassword()));
-        client.setRole(request.getRole());
+        client.setRole(request.getRole() != null ? request.getRole() : Role.USER);
 
         // Sauvegarder le client
         Client savedClient = clientRepository.save(client);

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/manager")
+@RequestMapping("/manager")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
 public class ManagerController {

@@ -1,5 +1,6 @@
 package com.vehicules.repositories;
 
+import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.Commande;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,8 @@ import java.util.List;
 public interface CommandeRepository extends JpaRepository<Commande, Long> {
 
     List<Commande> findByClientId(Long clientId);
+
+    List<Commande> findByClient(Client client);
 
     List<Commande> findByStatut(String statut);
 

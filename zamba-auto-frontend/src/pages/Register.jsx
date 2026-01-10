@@ -15,11 +15,17 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     try {
+      // Mapper les champs du formulaire vers les champs attendus par le backend
       const userData = {
-        ...data,
+        nom: data.lastName, // lastName -> nom
+        prenom: data.firstName, // firstName -> prenom
+        email: data.email,
+        password: data.password,
+        telephone: data.phone, // phone -> telephone
+        numeroPermis: data.firstName + data.lastName + Math.random().toString(36).substring(2, 8).toUpperCase(), // Générer un numéro de permis temporaire
         customer_type: accountType
       }
-      
+
       await registerUser(userData)
       navigate('/login', { 
         state: { 

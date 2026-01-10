@@ -73,36 +73,6 @@ const orderService = {
     }
   },
 
-  // Récupérer les documents d'une commande
-  getOrderDocuments: async (orderId) => {
-    try {
-      const response = await api.get(`/commandes/${orderId}/documents`);
-      return response.data;
-    } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors de la récupération des documents',
-        status: error.response?.status
-      };
-    }
-  },
-
-  // Télécharger un document spécifique (format adapté au backend)
-  downloadDocument: async (orderId, documentId, format = 'PDF') => {
-    try {
-      const response = await api.get(
-        `/commandes/${orderId}/documents/${documentId}/download`,
-        {
-          responseType: 'blob'
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors du téléchargement',
-        status: error.response?.status
-      };
-    }
-  },
 
   // Méthodes non encore implémentées côté backend - simulation ou messages informatifs
 

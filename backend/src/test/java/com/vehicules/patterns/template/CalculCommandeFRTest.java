@@ -1,8 +1,8 @@
 package com.vehicules.patterns.template;
 
-import com.vehicules.entities.Client;
-import com.vehicules.entities.LigneCommande;
-import com.vehicules.entities.Vehicule;
+import com.vehicules.core.entities.Client;
+import com.vehicules.core.entities.LigneCommande;
+import com.vehicules.core.entities.Vehicule;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 

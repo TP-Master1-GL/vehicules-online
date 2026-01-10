@@ -122,4 +122,8 @@ public abstract class Client implements UserDetails {
             ((ClientParticulier) this).setEnabled(enabled);
         }
     }
+
+    public boolean estEntreprise() {
+        return this instanceof Societe;
+    }
 }

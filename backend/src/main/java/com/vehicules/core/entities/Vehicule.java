@@ -49,6 +49,14 @@ public abstract class Vehicule {
     public abstract String getType();
     public abstract String getEnergie();
 
+    public String getTypeEnergie() {
+        return getEnergie();
+    }
+
+    public BigDecimal getPrix() {
+        return getPrixFinal();
+    }
+
     public BigDecimal getPrixFinal() {
         BigDecimal prix = prixBase;
         if (enSolde && pourcentageSolde != null) {

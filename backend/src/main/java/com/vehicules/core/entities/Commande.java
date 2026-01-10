@@ -29,6 +29,9 @@ public abstract class Commande {
     @Column(precision = 10, scale = 2)
     private BigDecimal montantTotal;
 
+    @Column(nullable = false)
+    private String paysLivraison;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
