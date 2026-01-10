@@ -178,10 +178,10 @@ const Login = () => {
                 {/* Connexion Google */}
                 <button
                   onClick={handleGoogleLogin}
-                  className="w-full flex items-center justify-center gap-3 border-2 border-gray-300 hover:border-gray-400 rounded-lg py-3 px-4 bg-white hover:bg-gray-50 transition-colors"
+                  className="w-full  flex bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 items-center  justify-center gap-3 border-3 border-gray-300 hover:border-gray-400 rounded-lg py-3 px-4 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <FaGoogle className="w-5 h-5 text-red-500" />
-                  <span className="text-gray-700 font-medium">
+                  <span className="text-white-500 font-medium">
                     Continuer avec Google
                   </span>
                 </button>

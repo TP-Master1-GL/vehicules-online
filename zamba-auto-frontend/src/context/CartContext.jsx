@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback } from 'react'
 import toast from 'react-hot-toast'
+import cartService from '../api/cart'
 
 // CORRECTION : Ajouter 'export' devant createContext
 export const CartContext = createContext()
@@ -21,22 +22,24 @@ export const CartProvider = ({ children }) => {
   const fetchCart = useCallback(async () => {
     try {
       setLoading(true)
-      // Simulation - Récupération du panier depuis localStorage
-      const storedCart = localStorage.getItem('zamba_cart')
-      const storedTotal = localStorage.getItem('zamba_cart_total')
-      
-      if (storedCart) {
-        const parsedCart = JSON.parse(storedCart)
-        setCart(parsedCart)
-        setTotal(parsedCart.reduce((sum, item) => sum + item.totalPrice, 0))
-      } else {
-        setCart([])
-        setTotal(0)
-      }
+      const cartData = await cartService.getCart()
+
+      // Adapter le format du backend au format frontend
+      const formattedCart = cartData.items?.map(item => ({
+        id: item.id,
+        vehicle: item.vehicule,
+        quantity: item.quantite,
+        selectedOptions: item.options || [],
+        totalPrice: item.prixTotal || 0
+      })) || []
+
+      setCart(formattedCart)
+      setTotal(cartData.total || 0)
     } catch (error) {
       console.error('Erreur lors de la récupération du panier:', error)
       setCart([])
       setTotal(0)
+      toast.error('Erreur lors du chargement du panier')
     } finally {
       setLoading(false)
     }
@@ -47,30 +50,20 @@ export const CartProvider = ({ children }) => {
       setLoading(true)
       // Sauvegarder l'état actuel pour undo (Pattern Command)
       setHistory(prev => [...prev, { cart: [...cart], total }])
-      
+
+      // Utiliser le service API pour ajouter au panier
       const cartItem = {
-        id: Date.now(),
-        vehicle,
-        options,
-        quantity,
-        unitPrice: vehicle.price,
-        totalPrice: vehicle.price * quantity,
-        addedAt: new Date().toISOString()
+        vehicleId: vehicle.id,
+        selectedOptions: options,
+        quantity: quantity
       }
-      
-      const newCart = [...cart, cartItem]
-      const newTotal = newCart.reduce((sum, item) => sum + item.totalPrice, 0)
-      
-      // Mettre à jour le state
-      setCart(newCart)
-      setTotal(newTotal)
-      
-      // Sauvegarder dans localStorage
-      localStorage.setItem('zamba_cart', JSON.stringify(newCart))
-      localStorage.setItem('zamba_cart_total', newTotal.toString())
-      
+
+      await cartService.addToCart(cartItem)
+
+      // Recharger le panier depuis le backend
+      await fetchCart()
+
       toast.success('Véhicule ajouté au panier !')
-      return cartItem
     } catch (error) {
       toast.error(error.message || 'Erreur lors de l\'ajout au panier')
       throw error
@@ -84,18 +77,13 @@ export const CartProvider = ({ children }) => {
       setLoading(true)
       // Sauvegarder l'état actuel pour undo
       setHistory(prev => [...prev, { cart: [...cart], total }])
-      
-      const newCart = cart.filter(item => item.id !== itemId)
-      const newTotal = newCart.reduce((sum, item) => sum + item.totalPrice, 0)
-      
-      // Mettre à jour le state
-      setCart(newCart)
-      setTotal(newTotal)
-      
-      // Sauvegarder dans localStorage
-      localStorage.setItem('zamba_cart', JSON.stringify(newCart))
-      localStorage.setItem('zamba_cart_total', newTotal.toString())
-      
+
+      // Utiliser le service API pour supprimer du panier
+      await cartService.removeFromCart(itemId)
+
+      // Recharger le panier depuis le backend
+      await fetchCart()
+
       toast.success('Article supprimé du panier')
     } catch (error) {
       toast.error(error.message || 'Erreur lors de la suppression')

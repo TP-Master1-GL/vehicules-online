@@ -42,7 +42,7 @@ const Header = () => {
             <img 
               src="/logo-zamba.png" 
               alt="ZAMBA Auto" 
-              className="h-25 w-20"
+              className="h-full w-40"
             />
           </Link>
 

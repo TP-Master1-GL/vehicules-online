@@ -1,6 +1,6 @@
 package com.vehicules.services;
 
-import com.vehicules.entities.*;
+import com.vehicules.core.entities.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

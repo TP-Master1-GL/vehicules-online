@@ -26,6 +26,8 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPrenom("System");
             admin.setEmail("admin@vehicules-online.com");
             admin.setTelephone("0000000000");
+            admin.setAdresse("123 Admin Street, Admin City");
+            admin.setNumeroPermis("ADMIN123456");
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(Role.ADMIN);
 
@@ -40,6 +42,8 @@ public class DataInitializer implements CommandLineRunner {
             manager.setPrenom("Test");
             manager.setEmail("manager@vehicules-online.com");
             manager.setTelephone("1111111111");
+            manager.setAdresse("456 Manager Avenue, Manager City");
+            manager.setNumeroPermis("MANAGER123456");
             manager.setPassword(passwordEncoder.encode("manager123"));
             manager.setRole(Role.MANAGER);
 
@@ -54,6 +58,8 @@ public class DataInitializer implements CommandLineRunner {
             user.setPrenom("Test");
             user.setEmail("user@vehicules-online.com");
             user.setTelephone("2222222222");
+            user.setAdresse("789 User Boulevard, User City");
+            user.setNumeroPermis("USER123456");
             user.setPassword(passwordEncoder.encode("user123"));
             user.setRole(Role.USER);
 

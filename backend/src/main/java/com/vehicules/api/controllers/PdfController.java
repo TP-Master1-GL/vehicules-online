@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/pdf")
+@RequestMapping("/pdf")
 @CrossOrigin(origins = "*")
 public class PdfController {
     

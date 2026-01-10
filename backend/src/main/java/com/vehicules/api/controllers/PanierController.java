@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/panier")
+@RequestMapping("/panier")
 @RequiredArgsConstructor
 @Tag(name = "Panier", description = "API pour la gestion du panier d'achat")
 public class PanierController {

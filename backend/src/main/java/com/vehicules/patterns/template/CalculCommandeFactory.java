@@ -1,7 +1,7 @@
 // src/main/java/com/vehicules/patterns/template/CalculCommandeFactory.java
 package com.vehicules.patterns.template;
 
-import com.vehicules.entities.Commande;
+import com.vehicules.core.entities.Commande;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

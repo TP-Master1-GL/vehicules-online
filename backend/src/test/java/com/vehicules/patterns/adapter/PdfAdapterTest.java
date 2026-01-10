@@ -1,7 +1,7 @@
 package com.vehicules.patterns.adapter;
 
-import com.vehicules.entities.BonCommande;
-import com.vehicules.entities.Commande;
+import com.vehicules.core.entities.BonCommande;
+import com.vehicules.core.entities.Commande;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import java.io.File;

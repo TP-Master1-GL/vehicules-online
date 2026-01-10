@@ -46,29 +46,27 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setLoading(true)
-      // Simulation - À remplacer par l'appel API
-      const mockUser = {
-        id: 1,
-        email: email,
-        name: email.split('@')[0],
-        customer_type: email.includes('entreprise') ? 'company' : 
-                      email.includes('filiale') ? 'subsidiary' : 'individual',
-        company_id: email.includes('entreprise') ? 1 : null,
-        first_name: 'John',
-        last_name: 'Doe',
-        phone: '+237 6 77 88 99 00'
+      const response = await authService.login(email, password)
+
+      const userData = {
+        id: response.user?.id || response.id,
+        email: response.user?.email || response.email,
+        nom: response.user?.nom || response.nom,
+        prenom: response.user?.prenom || response.prenom,
+        customer_type: response.user?.type || response.customer_type || 'individual',
+        role: response.user?.role || response.role,
+        company_id: response.company_id,
+        telephone: response.user?.telephone || response.telephone
       }
-      
-      const mockToken = 'mock-jwt-token-123456'
-      
-      localStorage.setItem('token', mockToken)
-      localStorage.setItem('user', JSON.stringify(mockUser))
-      
-      setUser(mockUser)
+
+      localStorage.setItem('token', response.token)
+      localStorage.setItem('user', JSON.stringify(userData))
+
+      setUser(userData)
       setIsAuthenticated(true)
-      
+
       toast.success('Connexion réussie !')
-      return { user: mockUser, token: mockToken }
+      return response
     } catch (error) {
       toast.error(error.message || 'Erreur de connexion')
       throw error
@@ -80,17 +78,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setLoading(true)
-      // Simulation d'inscription
-      const mockUser = {
-        id: Date.now(),
-        ...userData,
-        customer_type: userData.email.includes('entreprise') ? 'company' : 
-                      userData.email.includes('filiale') ? 'subsidiary' : 'individual',
-        company_id: userData.email.includes('entreprise') ? Date.now() : null
-      }
-      
+      const response = await authService.register(userData)
+
       toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.')
-      return { user: mockUser }
+      return response
     } catch (error) {
       toast.error(error.message || "Erreur d'inscription")
       throw error

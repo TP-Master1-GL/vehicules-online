@@ -1,8 +1,8 @@
 // src/main/java/com/vehicules/patterns/template/CalculCommandeFR.java
 package com.vehicules.patterns.template;
 
-import com.vehicules.entities.Commande;
-import com.vehicules.entities.LigneCommande;
+import com.vehicules.core.entities.Commande;
+import com.vehicules.core.entities.LigneCommande;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -40,4 +40,5 @@ public class CalculCommandeFR extends CalculCommandeTemplate {
         // Frais de livraison fixes pour la France
         return total + FRAIS_LIVRAISON_FR;
 
+}
 }

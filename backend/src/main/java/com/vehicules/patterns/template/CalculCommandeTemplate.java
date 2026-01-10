@@ -1,7 +1,7 @@
 // src/main/java/com/vehicules/patterns/template/CalculCommandeTemplate.java
 package com.vehicules.patterns.template;
 
-import com.vehicules.entities.Commande;
+import com.vehicules.core.entities.Commande;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -29,7 +29,7 @@ public abstract class CalculCommandeTemplate {
             return 0.0;
         }
         return commande.getLignes().stream()
-            .mapToDouble(ligne -> ligne.getVehicule().getPrix() * ligne.getQuantite())
+            .mapToDouble(ligne -> ligne.getVehicule().getPrix().doubleValue() * ligne.getQuantite())
             .sum();
     }
     

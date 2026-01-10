@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/admin")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {

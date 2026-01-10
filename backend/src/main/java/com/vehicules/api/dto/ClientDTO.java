@@ -14,4 +14,12 @@ public class ClientDTO {
     private String telephone;
     private String adresse;
     private String type;
+
+    // Pour ClientParticulier
+    private String prenom;
+    private String numeroPermis;
+
+    // Pour Societe
+    private String raisonSociale;
+    private String siret;
 }
