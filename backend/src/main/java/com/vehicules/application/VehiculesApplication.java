@@ -10,16 +10,5 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class VehiculesApplication {
     public static void main(String[] args) {
 
-        SpringApplication.run(VehiculesApplication.class, args);
-
-        LiasseViergeSingleton liassePDF = LiasseViergeSingleton.getInstance(Format.PDF);
-
-        LiasseDocuments liasseDocumentsPDF = liassePDF.construireLiasseVierge();
-
-        LiasseViergeSingleton liasseHTML = LiasseViergeSingleton.getInstance(Format.HTML);
-
-        LiasseDocuments liasseDocumentsHTML = liassePDF.construireLiasseVierge();
-
-
     }
 }
