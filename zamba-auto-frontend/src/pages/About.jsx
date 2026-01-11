@@ -47,7 +47,7 @@ const About = () => {
         </div>
 
         {/* Mission Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 md:p-12 text-white mb-16">
+        <div className="bg-gradient-to-r from-blue-600 to-orange-700 rounded-2xl p-8 md:p-12 text-white mb-16">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-3xl font-bold mb-6">Notre Mission</h2>
@@ -111,11 +111,11 @@ const About = () => {
               <div className="text-gray-600">Véhicules vendus</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-orange-500 mb-2">98%</div>
+              <div className="text-4xl font-bold text-blue-500 mb-2">98%</div>
               <div className="text-gray-600">Clients satisfaits</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-orange-500 mb-2">15</div>
+              <div className="text-4xl font-bold text-blue-500 mb-2">15</div>
               <div className="text-gray-600">Années d'expérience</div>
             </div>
             <div className="text-center">
@@ -126,13 +126,13 @@ const About = () => {
         </div>
 
         {/* Contact Info */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-8 text-white">
+        <div className="bg-gradient-to-r from-blue-700 to-orange-700 rounded-2xl p-8 text-white">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-6">Contactez-nous</h2>
             <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               <div className="text-center">
                 <div className="text-2xl font-bold mb-2">Téléphone</div>
-                <div className="text-lg opacity-90">+222 6 06 00 08 09</div>
+                <div className="text-lg opacity-90">+237 6 06 00 08 09</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold mb-2">Email</div>
@@ -144,7 +144,7 @@ const About = () => {
               </div>
             </div>
             <div className="mt-8">
-              <button className="bg-white text-orange-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors">
+              <button className="bg-white text-blue-500  font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors">
                 Contactez-nous maintenant
               </button>
             </div>

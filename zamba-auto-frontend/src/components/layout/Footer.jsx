@@ -156,7 +156,7 @@ const Footer = () => {
       </div>
 
       {/* Bande finale */}
-      <div className="w-full h-1 bg-gradient-to-r from-[#E26A1A] via-[#F28C28] to-[#F2C28B]" />
+      <div className="w-full h-1 bg-gradient-to-r from-[#E27A1B] via-[#F28C58] to-[#F2C78B]" />
     </footer>
   )
 }

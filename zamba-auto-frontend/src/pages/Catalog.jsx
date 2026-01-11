@@ -289,7 +289,7 @@ const Catalog = () => {
 
       <div className="container mx-auto px-4 py-8">
         {/* Header avec effet visuel */}
-        <div className="text-center mb-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white">
+        <div className="text-center mb-12 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 to-orange-800 p-8 text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-pulse">
             Catalogue Véhicules
           </h1>
@@ -306,7 +306,7 @@ const Catalog = () => {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
+                className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-600 to-blue-700 text-white rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl"
               >
                 <FaFilter />
                 Filtres {activeFiltersCount > 0 && `(${activeFiltersCount})`}

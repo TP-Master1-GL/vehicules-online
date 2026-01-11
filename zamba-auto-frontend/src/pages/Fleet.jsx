@@ -51,7 +51,7 @@ const Fleet = () => {
             
             {/* Avantages */}
             <div>
-              <div className="bg-gradient-to-br from-blue-900 to-blue-700 text-white p-8 rounded-xl mb-6">
+              <div className="bg-gradient-to-br from-blue-900 to-orange-800 text-white p-8 rounded-xl mb-6">
                 <h3 className="text-xl font-bold mb-4">Avantages pour les entreprises</h3>
                 <ul className="space-y-3">
                   <li className="flex items-center">

@@ -8,11 +8,11 @@ const Contact = () => {
             {/* Informations de contact */}
             <div>
               <div className="bg-white p-8 rounded-xl shadow mb-6">
-                <h2 className="text-2xl font-bold text-blue-800 mb-6">Nos coordonnées</h2>
+                <h2 className="text-2xl font-bold text-blue-700 mb-6">Nos coordonnées</h2>
                 
                 <div className="space-y-4">
                   <div className="flex items-start">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
+                    <div className="bg-blue-400 p-3 rounded-lg mr-4">
                       <span className="text-blue-800">📞</span>
                     </div>
                     <div>
@@ -22,7 +22,7 @@ const Contact = () => {
                   </div>
                   
                   <div className="flex items-start">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
+                    <div className="bg-blue-400 p-3 rounded-lg mr-4">
                       <span className="text-blue-800">✉️</span>
                     </div>
                     <div>
@@ -32,7 +32,7 @@ const Contact = () => {
                   </div>
                   
                   <div className="flex items-start">
-                    <div className="bg-blue-100 p-3 rounded-lg mr-4">
+                    <div className="bg-blue-400 p-3 rounded-lg mr-4">
                       <span className="text-blue-800">🕒</span>
                     </div>
                     <div>
@@ -51,7 +51,7 @@ const Contact = () => {
             
             {/* Formulaire de contact */}
             <div className="bg-white p-8 rounded-xl shadow">
-              <h2 className="text-2xl font-bold text-blue-800 mb-6">Envoyez-nous un message</h2>
+              <h2 className="text-2xl font-bold text-blue-700 mb-6">Envoyez-nous un message</h2>
               
               <form className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -91,7 +91,7 @@ const Contact = () => {
                   <textarea rows="4" required className="w-full p-3 border rounded-lg"></textarea>
                 </div>
                 
-                <button type="submit"  className="w-full bg-gradient-to-r from-orange-500 to-orange-500 hover:from-orange-700 hover:to-orange-700 text-white font-bold py-3.5 px-6 rounded-lg transition-all hover:shadow-lg disabled:opacity-70">
+                <button type="submit"  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-blue-700 hover:to-orange-700 text-white font-bold py-3.5 px-6 rounded-lg transition-all hover:shadow-lg disabled:opacity-70">
                   Envoyer le message
                 </button>
               </form>
