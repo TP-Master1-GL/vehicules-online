@@ -1,7 +1,7 @@
 package com.vehicules.patterns.abstractfactory;
 
-import com.vehicules.entities.AutomobileEssence;
-import com.vehicules.entities.Vehicule;
+import com.vehicules.core.entities.AutomobileEssence;
+import com.vehicules.core.entities.Vehicule;
 
 public class AutomobileEssenceFactory implements VehiculeFactory {
 

@@ -2,6 +2,7 @@ package com.vehicules.core.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @Table(name = "societe")
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 public class Societe extends Client {
     @Column(nullable = false, unique = true)

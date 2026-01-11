@@ -1,7 +1,8 @@
-package com.vehicules.patterns.abstractfactory;
+package com.vehicules.patterns.abstractFactory;
 
-import com.vehicules.entities.Vehicule;
+import com.vehicules.core.entities.Vehicule;
 
 public interface VehiculeFactory {
-    Vehicule creerVehicule();
+    Vehicule creerAutomobile();
+    Vehicule creerScooter();
 }

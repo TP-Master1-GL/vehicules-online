@@ -23,7 +23,7 @@ public class TroisLignesIterator implements CatalogueIterator {
     @Override
     public Vehicule next() {
         if (!hasNext()) {
-            return null;
+            throw new IllegalStateException("Plus d'éléments dans l'itérateur");
         }
         return vehicules.get(position++);
     }

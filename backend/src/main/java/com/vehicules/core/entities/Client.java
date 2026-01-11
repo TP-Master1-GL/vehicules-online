@@ -3,6 +3,7 @@ package com.vehicules.core.entities;
 import com.vehicules.core.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -51,6 +52,7 @@ public abstract class Client implements UserDetails {
                 new SimpleGrantedAuthority("ROLE_" + particulier.getRole().name())
             );
         }
+        // Pour Societe ou autres types
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
@@ -59,7 +61,7 @@ public abstract class Client implements UserDetails {
         if (this instanceof ClientParticulier) {
             return ((ClientParticulier) this).getPassword();
         }
-        return "";
+        return ""; // ou retourner un mot de passe par défaut pour les sociétés
     }
 
     @Override
@@ -102,7 +104,7 @@ public abstract class Client implements UserDetails {
         if (this instanceof ClientParticulier) {
             return ((ClientParticulier) this).getRole();
         }
-        return Role.USER;
+        return Role.USER; // ou définir un rôle par défaut pour les sociétés
     }
 
     public void setPassword(String password) {

@@ -4,9 +4,12 @@ import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.CommandeCredit;
 
+import java.math.BigDecimal;
+
 public class CommandeCreditFactory implements CommandeFactory {
-    private double tauxInteret;
-    private int dureeMois;
+    
+    private final double tauxInteret;
+    private final int dureeMois;
     
     public CommandeCreditFactory(double tauxInteret, int dureeMois) {
         this.tauxInteret = tauxInteret;
@@ -17,8 +20,9 @@ public class CommandeCreditFactory implements CommandeFactory {
     public Commande creerCommande(Client client) {
         CommandeCredit commande = new CommandeCredit();
         commande.setClient(client);
-        commande.setTauxInteret(java.math.BigDecimal.valueOf(tauxInteret));
+        commande.setTauxInteret(new BigDecimal(tauxInteret));
         commande.setDureeMois(dureeMois);
+        commande.setOrganismeCredit("Banque Standard");
         return commande;
     }
 }

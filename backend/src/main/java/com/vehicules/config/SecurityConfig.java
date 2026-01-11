@@ -37,14 +37,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/catalogue/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll() // Changé de "/auth/**" à "/api/auth/**"
+                        .requestMatchers("/api/catalogue/**").permitAll() // Changé de "/catalogue/**" à "/api/catalogue/**"
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/panier/**").permitAll()
-                        .requestMatchers("/commandes/**").authenticated()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers("/api/panier/**").permitAll() // Changé de "/panier/**" à "/api/panier/**"
+                        .requestMatchers("/api/commandes/**").authenticated() // Changé de "/commandes/**" à "/api/commandes/**"
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
