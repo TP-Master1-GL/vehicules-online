@@ -1,0 +1,52 @@
+package com.vehicules.core.entities;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "commande")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
+public abstract class Commande {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private LocalDateTime dateCreation;
+
+    @Column(nullable = false)
+    private String statut; // EN_COURS, CONFIRMEE, PAYEE, LIVREE, ANNULEE
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal montantTotal;
+
+    @Column(nullable = false)
+    private String paysLivraison;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = false)
+    private Client client;
+
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<LigneCommande> lignes;
+
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Document> documents;
+
+    public abstract String getTypePaiement();
+
+    public BigDecimal calculerMontantTotal() {
+        return lignes.stream()
+                .map(LigneCommande::getPrixTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+}

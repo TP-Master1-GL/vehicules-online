@@ -1,0 +1,75 @@
+/* Fichier principal - DOIT contenir les directives Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Vos styles personnalisés APRÈS Tailwind */
+:root {
+  --primary-orange: #F57C00;
+  --primary-blue: #1E4ED8;
+  --primary-dark: #1A1A1A;
+  --primary-gray: #666666;
+  --primary-light: #F5F5F5;
+}
+
+/* Styles globaux */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+}
+
+/* Classes utilitaires personnalisées */
+.container-zamba {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.btn-zamba-orange {
+  @apply bg-primary-orange text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-all duration-200;
+}
+
+.btn-zamba-blue {
+  @apply bg-primary-blue text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200;
+}
+
+/* Pattern africain */
+.african-pattern-top {
+  background-image: url('/african-pattern-border.png');
+  background-repeat: repeat-x;
+  background-position: top;
+  height: 20px;
+  width: 100%;
+}
+
+.african-separator {
+  background-image: url('/african-pattern-border.png');
+  background-repeat: repeat-x;
+  background-position: center;
+  height: 20px;
+  width: 100%;
+  opacity: 0.3;
+}
+
+/* Animation spinner */
+.spinner {
+  @apply animate-spin rounded-full h-12 w-12 border-b-2 border-primary-orange;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container-zamba {
+    @apply px-4;
+  }
+}
