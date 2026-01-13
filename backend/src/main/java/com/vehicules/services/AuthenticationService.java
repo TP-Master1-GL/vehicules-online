@@ -7,29 +7,32 @@ import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.ClientParticulier;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
+@RequiredArgsConstructor
+
 public class AuthenticationService {
 
-    @Autowired
-    private ClientRepository clientRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final ClientRepository clientRepository;
 
-    @Autowired
-    private JwtService jwtService;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final PasswordEncoder passwordEncoder;
 
-    @Transactional
+
+    private final JwtService jwtService;
+
+    private final AuthenticationManager authenticationManager;
+
+   // @Transactional
     public AuthenticationResponseDTO register(RegisterRequestDTO request) {
         // Vérifications supplémentaires
         if (request.getNom() == null || request.getNom().trim().isEmpty()) {

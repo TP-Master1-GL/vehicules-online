@@ -1,10 +1,13 @@
 package com.vehicules.entities;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+
+@Entity
 
 @MappedSuperclass
 public abstract class Vehicule {
     
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

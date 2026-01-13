@@ -1,11 +1,13 @@
 package com.vehicules.test;
 
 import com.vehicules.entities.*;
-import com.vehicules.patterns.abstractfactory.*;
+import com.vehicules.patterns.abstractFactory.*;
 import com.vehicules.patterns.factory.CommandeFactory;
 import com.vehicules.patterns.iterator.VehiculeCatalogueIterator;
 import java.util.ArrayList;
 import java.util.List;
+
+// On instancie ni les classes abstraites ni les interfaces
 
 public class TestPatterns {
 
@@ -29,11 +31,12 @@ public class TestPatterns {
         System.out.println("-".repeat(40));
         
         // Création des factories
-        VehiculeFactory[] factories = {
-            new AutomobileEssenceFactory(),
-            new AutomobileElectriqueFactory(),
-            new ScooterEssenceFactory(),
-            new ScooterElectriqueFactory()
+        com.vehicules.patterns.abstractfactory.VehiculeFactory[] factories = {
+
+//            new com.vehicules.patterns.abstractfactory.AutomobileEssenceFactory(),
+//            new com.vehicules.patterns.abstractfactory.AutomobileElectriqueFactory(),
+//            new com.vehicules.patterns.abstractfactory.ScooterEssenceFactory(),
+//            new com.vehicules.patterns.abstractfactory.ScooterElectriqueFactory(),
         };
         
         String[] noms = {

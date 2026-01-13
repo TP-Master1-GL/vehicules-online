@@ -3,7 +3,7 @@ package com.vehicules.api.controllers;
 import com.vehicules.core.entities.Client;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +16,12 @@ import java.util.Optional;
 @RequestMapping("/admin")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
+
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired
-    private ClientRepository clientRepository;
+
+    private final ClientRepository clientRepository;
 
     @GetMapping("/utilisateurs")
     public ResponseEntity<List<Client>> getAllUtilisateurs(

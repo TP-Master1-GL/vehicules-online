@@ -6,7 +6,8 @@ import com.vehicules.core.entities.Vehicule;
 import java.math.BigDecimal;
 
 public class ElectriqueFactory implements VehiculeFactory {
-    @Override
+
+
     public Vehicule creerAutomobile() {
         AutomobileElectrique auto = new AutomobileElectrique();
         auto.setModele("Modèle Électrique Premium");
@@ -23,7 +24,6 @@ public class ElectriqueFactory implements VehiculeFactory {
         return auto;
     }
 
-    @Override
     public Vehicule creerScooter() {
         ScooterElectrique scooter = new ScooterElectrique();
         scooter.setModele("Scooter Électrique Pro");
@@ -36,5 +36,10 @@ public class ElectriqueFactory implements VehiculeFactory {
         scooter.setTempsCharge(120);
         scooter.setTypeBatterie("LITHIUM_ION");
         return scooter;
+    }
+
+    @Override
+    public com.vehicules.entities.Vehicule creerVehicule() {
+        return null;
     }
 }

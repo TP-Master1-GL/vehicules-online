@@ -5,7 +5,8 @@ import com.vehicules.api.dto.auth.LoginRequestDTO;
 import com.vehicules.api.dto.auth.RegisterRequestDTO;
 import com.vehicules.services.AuthenticationService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -19,12 +20,14 @@ import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "*")
+
+@RequiredArgsConstructor
 public class AuthenticationController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationController.class);
 
-    @Autowired
-    private AuthenticationService authenticationService;
+
+    private final AuthenticationService authenticationService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO request, BindingResult bindingResult) {

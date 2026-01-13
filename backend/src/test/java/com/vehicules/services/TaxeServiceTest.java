@@ -18,10 +18,10 @@ class TaxeServiceTest {
     @Test
     void testCalculerTotalAvecTaxes_France() {
         // Arrange
-        Client client = new Client();
+        Client client = new Client(); //Client est une classe abstraite, elle ne peut donc pas etre instantiée. Il faut donc instancié l'un de ces enfants
         client.setNom("Client FR");
         
-        Vehicule vehicule = new Vehicule();
+        Vehicule vehicule = new Vehicule(); // Vehicule est une classe abstraite, elle ne peut donc pas etre instantiée. Il faut donc instancié l'un de ces enfants
         vehicule.setPrixBase(25000.0);
         vehicule.setTypeEnergie("ESSENCE");
         

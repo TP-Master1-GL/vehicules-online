@@ -2,13 +2,18 @@ package com.vehicules.api.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/panier")
+
 @RequiredArgsConstructor
+
+
 @Tag(name = "Panier", description = "API pour la gestion du panier d'achat")
 public class PanierController {
 
@@ -34,14 +39,12 @@ public class PanierController {
     }
 
     // Classe interne pour la requête
+    @Setter
+    @Getter
     public static class AjouterPanierRequest {
+        // Getters et setters
         private Long vehiculeId;
         private Long[] optionsIds;
 
-        // Getters et setters
-        public Long getVehiculeId() { return vehiculeId; }
-        public void setVehiculeId(Long vehiculeId) { this.vehiculeId = vehiculeId; }
-        public Long[] getOptionsIds() { return optionsIds; }
-        public void setOptionsIds(Long[] optionsIds) { this.optionsIds = optionsIds; }
     }
 }

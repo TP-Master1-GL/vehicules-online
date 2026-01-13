@@ -1,7 +1,12 @@
 package com.vehicules.repositories;
 
-import com.vehicules.entities.Vehicule;
+import com.vehicules.core.entities.Vehicule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 public interface VehiculeRepository extends JpaRepository<Vehicule, Long> {
 

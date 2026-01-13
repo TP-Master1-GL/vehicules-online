@@ -4,8 +4,9 @@ import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.CommandeComptant;
 
-public class CommandeComptantFactory implements CommandeFactory {
-    @Override
+public class CommandeComptantFactory extends CommandeFactory {
+
+
     public Commande creerCommande(Client client) {
         CommandeComptant commande = new CommandeComptant();
         commande.setClient(client);

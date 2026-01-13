@@ -9,6 +9,8 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// On instancie ni les classes abstraites ni les interfaces
+
 @SpringBootTest
 class PdfAdapterTest {
     

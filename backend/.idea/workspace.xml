@@ -4,7 +4,59 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b125ee93-1d1e-44e4-8597-f4c6c95180ae" name="Changes" comment="Ajout des patrons Command and composite" />
+    <list default="true" id="b125ee93-1d1e-44e4-8597-f4c6c95180ae" name="Changes" comment="Ajout des patrons Command and composite">
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/AdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/AdminController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/AuthenticationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/AuthenticationController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/BridgeFormController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/BridgeFormController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/ManagerController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/ManagerController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/PanierController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/PanierController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/PdfController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/controllers/PdfController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/AuthenticationResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/AuthenticationResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/LoginRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/LoginRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/RegisterRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/api/dto/auth/RegisterRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/config/DataInitializer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/config/DataInitializer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/config/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/config/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/core/entities/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/core/entities/Client.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/core/entities/Vehicule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/core/entities/Vehicule.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/entities/CommandeComptant.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/entities/CommandeComptant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/entities/Vehicule.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/entities/Vehicule.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/ElectriqueFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/ElectriqueFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/EssenceFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/EssenceFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/VehiculeFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractFactory/VehiculeFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/AutomobileElectriqueFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/AutomobileElectriqueFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/AutomobileEssenceFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/AutomobileEssenceFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/ScooterElectriqueFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/ScooterElectriqueFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/ScooterEssenceFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/abstractfactory/ScooterEssenceFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/builder/DirecteurDocuments.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/builder/DirecteurDocuments.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeComptantFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeComptantFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeCreditFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeCreditFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/factory/CommandeFactory.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/iterator/TroisLignesIterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/iterator/TroisLignesIterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/iterator/UneLigneIterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/patterns/iterator/UneLigneIterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/dto/PdfRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/dto/PdfRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/dto/PdfResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/dto/PdfResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/services/DocumentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/services/DocumentService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/services/PdfGenerationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/pdf/services/PdfGenerationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/ClientRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/ClientRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/CommandeRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/CommandeRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/VehiculeRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/repositories/VehiculeRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/services/AuthenticationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/services/AuthenticationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/services/CustomUserDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/services/CustomUserDetailsService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/vehicules/services/JwtService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/vehicules/services/JwtService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/vehicules/patterns/adapter/PdfAdapterTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/vehicules/patterns/adapter/PdfAdapterTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/vehicules/patterns/template/CalculCommandeFRTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/vehicules/patterns/template/CalculCommandeFRTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/vehicules/services/TaxeServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/vehicules/services/TaxeServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/vehicules/test/PatternsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/vehicules/test/PatternsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/vehicules/test/TestPatterns.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/vehicules/test/TestPatterns.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -59,14 +111,17 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.VehiculesApplication (1).executor": "Run",
     "Spring Boot.VehiculesApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
+    "extract.method.default.visibility": "private",
+    "git-widget-placeholder": "modifications",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/BETINE Audrey/vehicules-online/backend",
+    "last_opened_file_path": "C:/Users/BETINE Audrey/newClone/vehicules-online/backend",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -86,7 +141,14 @@
       <recent name="com.vehicules.entities" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Spring Boot.VehiculesApplication (1)">
+    <configuration name="VehiculesApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="backend" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.vehicules.VehiculesApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="VehiculesApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="vehicules-online-backend" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.vehicules.application.VehiculesApplication" />
@@ -116,6 +178,7 @@
       <workItem from="1768014475883" duration="11941000" />
       <workItem from="1768128439827" duration="6664000" />
       <workItem from="1768150019751" duration="1223000" />
+      <workItem from="1768331732816" duration="8249000" />
     </task>
     <task id="LOCAL-00001" summary="Ajout des patrons Command and composite">
       <option name="closed" value="true" />
@@ -157,5 +220,16 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Ajout des patrons Command and composite" />
     <option name="LAST_COMMIT_MESSAGE" value="Ajout des patrons Command and composite" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/vehicules/pdf/services/DocumentService.java</url>
+          <line>27</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

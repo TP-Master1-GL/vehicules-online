@@ -5,6 +5,7 @@ import com.vehicules.pdf.dto.PdfRequestDTO;
 import com.vehicules.pdf.dto.PdfResponseDTO;
 import com.vehicules.pdf.services.DocumentService;
 import com.vehicules.repositories.CommandeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -20,12 +21,15 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/pdf")
 @CrossOrigin(origins = "*")
+
+@RequiredArgsConstructor
+
 public class PdfController {
     
-    @Autowired
+
     private DocumentService documentService;
     
-    @Autowired
+
     private CommandeRepository commandeRepository;
     
     @PostMapping("/generate")

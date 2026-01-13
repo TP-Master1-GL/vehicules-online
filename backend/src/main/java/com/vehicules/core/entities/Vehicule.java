@@ -15,6 +15,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
+
+
 public abstract class Vehicule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -4,6 +4,7 @@ import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.Document;
 import com.vehicules.core.enums.TypeDocument;
 import com.vehicules.repositories.DocumentRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DocumentService {
     
-    @Autowired
-    private PdfGenerationService pdfGenerationService;
-    
-    @Autowired
-    private DocumentRepository documentRepository;
+
+    private final PdfGenerationService pdfGenerationService;
+
+    private final DocumentRepository documentRepository;
     
     public List<byte[]> generateAllDocuments(Commande commande) throws IOException {
         List<byte[]> documents = new ArrayList<>();

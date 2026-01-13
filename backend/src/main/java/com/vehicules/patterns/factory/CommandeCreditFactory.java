@@ -4,7 +4,7 @@ import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.CommandeCredit;
 
-public class CommandeCreditFactory implements CommandeFactory {
+public class CommandeCreditFactory extends CommandeFactory {
     private double tauxInteret;
     private int dureeMois;
     
@@ -12,8 +12,7 @@ public class CommandeCreditFactory implements CommandeFactory {
         this.tauxInteret = tauxInteret;
         this.dureeMois = dureeMois;
     }
-    
-    @Override
+
     public Commande creerCommande(Client client) {
         CommandeCredit commande = new CommandeCredit();
         commande.setClient(client);

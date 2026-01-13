@@ -3,18 +3,18 @@ package com.vehicules.config;
 import com.vehicules.core.entities.ClientParticulier;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
-    private ClientRepository clientRepository;
 
-    @Autowired
+    private final ClientRepository clientRepository;
+
     private PasswordEncoder passwordEncoder;
 
     @Override

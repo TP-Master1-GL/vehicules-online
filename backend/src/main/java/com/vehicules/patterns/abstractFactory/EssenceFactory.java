@@ -1,12 +1,11 @@
 package com.vehicules.patterns.abstractFactory;
 
-import com.vehicules.core.entities.AutomobileEssence;
-import com.vehicules.core.entities.ScooterEssence;
-import com.vehicules.core.entities.Vehicule;
+import com.vehicules.core.entities.*;
+
 import java.math.BigDecimal;
 
-public class EssenceFactory implements VehiculeFactory {
-    @Override
+public class EssenceFactory
+{
     public Vehicule creerAutomobile() {
         AutomobileEssence auto = new AutomobileEssence();
         auto.setModele("Modèle Essence Standard");
@@ -23,7 +22,6 @@ public class EssenceFactory implements VehiculeFactory {
         return auto;
     }
 
-    @Override
     public Vehicule creerScooter() {
         ScooterEssence scooter = new ScooterEssence();
         scooter.setModele("Scooter Essence 125");

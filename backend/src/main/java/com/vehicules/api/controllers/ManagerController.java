@@ -6,12 +6,13 @@ import com.vehicules.core.enums.StatutCommande;
 import com.vehicules.repositories.ClientRepository;
 import com.vehicules.repositories.CommandeRepository;
 import com.vehicules.repositories.VehiculeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +21,18 @@ import java.util.Map;
 @RequestMapping("/manager")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+
+@RequiredArgsConstructor
 public class ManagerController {
 
-    @Autowired
-    private VehiculeRepository vehiculeRepository;
 
-    @Autowired
-    private CommandeRepository commandeRepository;
+    private final VehiculeRepository vehiculeRepository;
 
-    @Autowired
-    private ClientRepository clientRepository;
+
+    private final CommandeRepository commandeRepository;
+
+
+    private final ClientRepository clientRepository;
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboard() {

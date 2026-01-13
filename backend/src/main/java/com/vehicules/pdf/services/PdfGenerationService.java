@@ -3,16 +3,17 @@ package com.vehicules.pdf.services;
 import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.Vehicule;
 import com.vehicules.core.enums.TypeDocument;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
 @Service
+@RequiredArgsConstructor
 public class PdfGenerationService {
 
-    @Autowired
-    private PdfService pdfService;
+    private final PdfService pdfService;
 
     public byte[] generateDocument(Commande commande, TypeDocument type) throws IOException {
         switch (type) {

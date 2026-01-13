@@ -12,6 +12,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// On instancie ni les classes abstraites ni les interfaces
+
 @SpringBootTest
 class CalculCommandeFRTest {
     

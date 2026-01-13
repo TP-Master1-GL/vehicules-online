@@ -1,7 +1,11 @@
 package com.vehicules.test;
 
 import com.vehicules.entities.*;
-import com.vehicules.patterns.abstractfactory.*;
+
+import com.vehicules.patterns.abstractFactory.AutomobileElectriqueFactory;
+import com.vehicules.patterns.abstractFactory.AutomobileEssenceFactory;
+import com.vehicules.patterns.abstractFactory.ScooterElectriqueFactory;
+import com.vehicules.patterns.abstractFactory.ScooterEssenceFactory;
 import com.vehicules.patterns.factory.CommandeFactory;
 import com.vehicules.patterns.iterator.VehiculeCatalogueIterator;
 import org.junit.jupiter.api.Test;
@@ -9,30 +13,32 @@ import java.util.ArrayList;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
+// On instancie ni les classes abstraites ni les interfaces
+
 public class PatternsTest {
     
     @Test
     public void testAbstractFactory() {
         // Test AutomobileEssenceFactory
-        VehiculeFactory factory1 = new AutomobileEssenceFactory();
+        com.vehicules.patterns.abstractfactory.VehiculeFactory factory1 = new AutomobileEssenceFactory();
         Vehicule v1 = factory1.creerVehicule();
         assertNotNull(v1);
         assertTrue(v1 instanceof AutomobileEssence);
         
         // Test AutomobileElectriqueFactory
-        VehiculeFactory factory2 = new AutomobileElectriqueFactory();
+        com.vehicules.patterns.abstractfactory.VehiculeFactory factory2 = new AutomobileElectriqueFactory();
         Vehicule v2 = factory2.creerVehicule();
         assertNotNull(v2);
         assertTrue(v2 instanceof AutomobileElectrique);
         
         // Test ScooterEssenceFactory
-        VehiculeFactory factory3 = new ScooterEssenceFactory();
+        com.vehicules.patterns.abstractfactory.VehiculeFactory factory3 = new ScooterEssenceFactory();
         Vehicule v3 = factory3.creerVehicule();
         assertNotNull(v3);
         assertTrue(v3 instanceof ScooterEssence);
         
         // Test ScooterElectriqueFactory
-        VehiculeFactory factory4 = new ScooterElectriqueFactory();
+        com.vehicules.patterns.abstractfactory.VehiculeFactory factory4 = new ScooterElectriqueFactory();
         Vehicule v4 = factory4.creerVehicule();
         assertNotNull(v4);
         assertTrue(v4 instanceof ScooterElectrique);

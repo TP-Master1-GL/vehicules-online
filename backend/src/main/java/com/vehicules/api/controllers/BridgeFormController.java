@@ -1,20 +1,22 @@
 package com.vehicules.api.controllers;
 
 import com.vehicules.patterns.bridge.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/forms")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class BridgeFormController {
     
-    @Autowired
-    private VehiculeFormService vehiculeFormService;
+
+    private final VehiculeFormService vehiculeFormService;
     
-    @Autowired
-    private CommandeFormService commandeFormService;
+
+    private final CommandeFormService commandeFormService;
     
     @GetMapping("/vehicule")
     public ResponseEntity<String> getVehiculeForm() {
@@ -46,11 +48,11 @@ public class BridgeFormController {
     public ResponseEntity<String> testBridgePattern() {
         StringBuilder result = new StringBuilder();
         result.append("=== Test Pattern Bridge ===\n\n");
-        
+
         result.append("1. Formulaire Véhicule (HTML):\n");
         result.append(vehiculeFormService.renderForm());
         result.append("\n\n").append(vehiculeFormService.getRendererInfo());
-        
+
         result.append("\n\n2. Formulaire Commande (Widget):\n");
         result.append(commandeFormService.renderForm());
         result.append("\n\n").append(commandeFormService.getRendererInfo());
