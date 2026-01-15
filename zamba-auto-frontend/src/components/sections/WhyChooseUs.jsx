@@ -150,8 +150,8 @@ const WhyChooseUs = () => {
         <div className="text-center mb-16 md:mb-20">
           <div className="inline-flex items-center justify-center mb-6">
             <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-900 to-blue-800 rounded-full flex items-center justify-center shadow-2xl animate-pulse-slow">
-                <span className="text-5xl text-white">🚗</span>
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-700 to-orange-800 rounded-full flex items-center justify-center shadow-2xl animate-pulse-slow">
+                <span className="text-5xl text-white">🤔</span>
               </div>
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full opacity-20 blur-xl animate-ping-slow"></div>
             </div>

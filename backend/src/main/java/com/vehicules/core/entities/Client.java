@@ -95,10 +95,12 @@ public abstract class Client {
         }
     }
 
-    public void setEnabled(boolean enabled) {
+    public boolean isEnabled() {
         if (this instanceof ClientParticulier) {
-            ((ClientParticulier) this).setEnabled(enabled);
+            ClientParticulier cp = (ClientParticulier) this;
+            return cp.getEnabled() != null ? cp.getEnabled() : true;
         }
+        return true; // Les sociétés sont toujours activées par défaut
     }
 
     public boolean estEntreprise() {

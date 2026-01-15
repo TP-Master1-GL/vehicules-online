@@ -32,8 +32,20 @@ export const AuthProvider = ({ children }) => {
       
       if (storedUser && token) {
         const userData = JSON.parse(storedUser)
-        setUser(userData)
-        setIsAuthenticated(true)
+        // Vérifier que les données utilisateur sont valides
+        if (userData && userData.email) {
+          // Debug: afficher le rôle pour vérification
+          console.log('🔐 CheckAuth - User data:', userData)
+          console.log('🔐 CheckAuth - Role:', userData.role, 'Type:', typeof userData.role)
+          setUser(userData)
+          setIsAuthenticated(true)
+        } else {
+          // Données invalides, nettoyer
+          logout()
+        }
+      } else {
+        setUser(null)
+        setIsAuthenticated(false)
       }
     } catch (error) {
       console.error('Erreur de vérification d\'authentification:', error)
@@ -48,25 +60,32 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       const response = await authService.login(email, password)
 
+      // Le backend retourne directement les données dans response.data
+      // Le rôle peut être une string ou un enum, on le normalise en string
       const userData = {
-        id: response.user?.id || response.id,
-        email: response.user?.email || response.email,
-        nom: response.user?.nom || response.nom,
-        prenom: response.user?.prenom || response.prenom,
-        customerType: response.user?.customerType || response.customerType || 'individual',
-        role: response.user?.role || response.role,
+        id: response.id,
+        email: response.email,
+        nom: response.nom,
+        prenom: response.prenom,
+        customerType: response.customerType || 'individual',
+        role: typeof response.role === 'string' ? response.role : (response.role?.name?.() || String(response.role)), // 'ADMIN', 'MANAGER', 'USER'
         company_id: response.company_id,
-        telephone: response.user?.telephone || response.telephone
+        telephone: response.telephone
       }
 
+      // Debug: afficher le rôle pour vérification
+      console.log('🔐 Login successful - User data:', userData)
+      console.log('🔐 Role:', userData.role, 'Type:', typeof userData.role)
+
       localStorage.setItem('token', response.token)
+      localStorage.setItem('refreshToken', response.refreshToken)
       localStorage.setItem('user', JSON.stringify(userData))
 
       setUser(userData)
       setIsAuthenticated(true)
 
       toast.success('Connexion réussie !')
-      return response
+      return { ...response, user: userData }
     } catch (error) {
       toast.error(error.message || 'Erreur de connexion')
       throw error

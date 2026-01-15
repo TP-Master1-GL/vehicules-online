@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import { FaEnvelope, FaLock, FaGoogle, FaCheck, FaCar } from 'react-icons/fa'
 
@@ -14,6 +14,7 @@ const Login = () => {
   
   const { login } = useContext(AuthContext)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -29,8 +30,22 @@ const Login = () => {
     setLoading(true)
 
     try {
-      await login(formData.email, formData.password)
-      navigate('/')
+      const response = await login(formData.email, formData.password)
+      const user = response?.user || JSON.parse(localStorage.getItem('user'))
+      
+      // Rediriger selon le rôle de l'utilisateur
+      const userRole = user?.role?.toUpperCase?.() || user?.role
+      if (userRole === 'ADMIN') {
+        navigate('/admin/dashboard')
+      } else if (userRole === 'MANAGER') {
+        navigate('/manager/dashboard')
+      } else if (user?.customerType === 'company' || user?.customerType === 'professional') {
+        navigate('/entreprise/dashboard')
+      } else {
+        // Récupérer la route de redirection depuis l'état de navigation
+        const from = location.state?.from || '/'
+        navigate(from)
+      }
     } catch (err) {
       setError(err.message || 'Email ou mot de passe incorrect')
     } finally {

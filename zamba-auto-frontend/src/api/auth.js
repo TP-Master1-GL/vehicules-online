@@ -44,9 +44,20 @@ export const authService = {
     try {
       const response = await api.post('/auth/login', { email, password })
       
+      // Le backend retourne directement les données dans response.data
+      // Pas besoin de response.data.user car les données sont au niveau racine
       if (response.data.token) {
         localStorage.setItem('token', response.data.token)
-        localStorage.setItem('user', JSON.stringify(response.data.user))
+        localStorage.setItem('refreshToken', response.data.refreshToken)
+        // Stocker les données utilisateur avec le rôle
+        const userData = {
+          email: response.data.email,
+          nom: response.data.nom,
+          prenom: response.data.prenom,
+          role: response.data.role, // 'ADMIN', 'MANAGER', 'USER'
+          customerType: response.data.customerType || 'individual'
+        }
+        localStorage.setItem('user', JSON.stringify(userData))
       }
       
       return response.data

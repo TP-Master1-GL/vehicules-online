@@ -6,7 +6,9 @@ import {
   Outlet,
   Navigate 
 } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, AuthProvider } from '../context/AuthContext'
+import { CartProvider } from '../context/CartContext'
+import { CompanyProvider } from '../context/CompagnyContext'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 
@@ -23,6 +25,7 @@ const Documents = lazy(() => import('../pages/Documents'))
 const Login = lazy(() => import('../pages/Login'))
 const Register = lazy(() => import('../pages/Register'))
 const About = lazy(() => import('../pages/About'))
+const AdminDashboard = lazy(() => import('../pages/AdminDashboard'))
 
 // Loading component
 const LoadingSpinner = () => (
@@ -32,7 +35,7 @@ const LoadingSpinner = () => (
 )
 
 // Protected route wrapper component
-const ProtectedRoute = ({ children, requireCompany = false }) => {
+const ProtectedRoute = ({ children, requireCompany = false, requireAdmin = false }) => {
   const { isAuthenticated, user, loading } = useAuth()
   
   if (loading) {
@@ -41,6 +44,13 @@ const ProtectedRoute = ({ children, requireCompany = false }) => {
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+  
+  if (requireAdmin) {
+    const userRole = user?.role?.toUpperCase?.() || user?.role
+    if (userRole !== 'ADMIN') {
+      return <Navigate to="/" replace />
+    }
   }
   
   if (requireCompany && user?.customerType !== 'company' && user?.customerType !== 'professional') {
@@ -146,6 +156,16 @@ const router = createBrowserRouter([
         )
       },
       {
+        path: 'admin/dashboard',
+        element: (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProtectedRoute requireAdmin>
+              <AdminDashboard />
+            </ProtectedRoute>
+          </Suspense>
+        )
+      },
+      {
         path: 'documents',
         element: (
           <Suspense fallback={<LoadingSpinner />}>
@@ -187,7 +207,15 @@ const router = createBrowserRouter([
 })
 
 const AppRouter = () => {
-  return <RouterProvider router={router} />
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <CompanyProvider>
+          <RouterProvider router={router} />
+        </CompanyProvider>
+      </CartProvider>
+    </AuthProvider>
+  )
 }
 
 export default AppRouter

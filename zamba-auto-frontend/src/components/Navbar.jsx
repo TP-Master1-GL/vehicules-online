@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
@@ -8,6 +8,15 @@ const Navbar = () => {
   const { cart } = useContext(CartContext);
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Debug: afficher le rôle de l'utilisateur
+  useEffect(() => {
+    if (user) {
+      console.log('🔐 Navbar - User:', user);
+      console.log('🔐 Navbar - Role:', user.role, 'Type:', typeof user.role);
+      console.log('🔐 Navbar - Is Admin?', user.role === 'ADMIN' || user.role?.toUpperCase?.() === 'ADMIN');
+    }
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -60,6 +69,14 @@ const Navbar = () => {
               {/* User Menu */}
               {user ? (
                 <div className="flex items-center space-x-4">
+                  {(user.role === 'ADMIN' || user.role?.toUpperCase?.() === 'ADMIN') && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="text-orange-600 hover:text-orange-700 font-semibold"
+                    >
+                      Administration
+                    </Link>
+                  )}
                   <Link
                     to={user.customerType === 'company' || user.customerType === 'professional' ? '/entreprise/dashboard' : '/panier'}
                     className="text-gray-700 hover:text-orange-500 font-medium"
@@ -115,6 +132,14 @@ const Navbar = () => {
 
                 {user ? (
                   <>
+                    {(user.role === 'ADMIN' || user.role?.toUpperCase?.() === 'ADMIN') && (
+                      <Link
+                        to="/admin/dashboard"
+                        className="text-orange-600 hover:text-orange-700 font-semibold"
+                      >
+                        Administration
+                      </Link>
+                    )}
                     <Link
                       to={user.customerType === 'company' || user.customerType === 'professional' ? '/entreprise/dashboard' : '/panier'}
                       className="text-gray-700 hover:text-orange-500 font-medium"

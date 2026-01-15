@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { FaSearch, FaCar, FaBuilding, FaShieldAlt } from 'react-icons/fa'
 import SearchBar from '../components/sections/SearchBar'
 import ServicesSection from '../components/sections/ServicesSection'
@@ -10,6 +11,17 @@ import WhyChooseUs from '../components/sections/WhyChooseUs'
 
 const Home = () => {
   const navigate = useNavigate()
+  const { user, isAuthenticated, loading } = useAuth()
+
+  // Rediriger automatiquement les admins vers leur dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      const userRole = user?.role?.toUpperCase?.() || user?.role
+      if (userRole === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true })
+      }
+    }
+  }, [user, isAuthenticated, loading, navigate])
 
   return (
     <div className="min-h-screen bg-white">

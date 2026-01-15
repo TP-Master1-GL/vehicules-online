@@ -102,6 +102,14 @@ const Header = () => {
                     </span>
                   </button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 hidden group-hover:block z-50 border">
+                    {(user?.role === 'ADMIN' || user?.role?.toUpperCase?.() === 'ADMIN') && (
+                      <Link
+                        to="/admin/dashboard"
+                        className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 font-semibold text-orange-600"
+                      >
+                        Administration
+                      </Link>
+                    )}
                     <Link
                       to="/documents"
                       className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
@@ -178,6 +186,15 @@ const Header = () => {
               {/* Mobile Auth */}
               {user ? (
                 <div className="mt-4 pt-4 border-t">
+                  {(user?.role === 'ADMIN' || user?.role?.toUpperCase?.() === 'ADMIN') && (
+                    <Link
+                      to="/admin/dashboard"
+                      className="block px-4 py-3 text-orange-600 hover:bg-gray-50 font-semibold"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Administration
+                    </Link>
+                  )}
                   <Link
                     to="/documents"
                     className="block px-4 py-3 text-blue-900 hover:bg-gray-50"

@@ -1,14 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
+import AppRouter from './routes/AppRouter'
 import './index.css'  // IMPORTANT: Ceci doit être présent
 import './styles/global.css' // Si vous avez un fichier global.css
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <AppRouter />
   </React.StrictMode>,
 )
