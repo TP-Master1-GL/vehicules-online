@@ -29,11 +29,8 @@ public class TroisLignesIterator implements CatalogueIterator {
     }
 
     @Override
-    public Vehicule currentItem() {
-        if (position < vehicules.size()) {
-            return vehicules.get(position);
-        }
-        return null;
+    public void reset() {
+        position = 0;
     }
 
     /**

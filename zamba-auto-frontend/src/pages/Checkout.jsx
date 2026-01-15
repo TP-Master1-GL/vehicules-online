@@ -73,41 +73,27 @@ const Checkout = () => {
   const handlePaymentSubmit = async (data) => {
     try {
       setIsProcessing(true)
-      
-      // Simulation de création de commande
+
+      // Adapter le format pour le backend
       const orderData = {
-        customerId: user?.id,
-        deliveryAddress: data,
-        paymentMethod,
-        deliveryCountry,
-        items: cart.map(item => ({
-          vehicleId: item.vehicle.id,
-          quantity: item.quantity,
-          options: item.options,
-          unitPrice: item.unitPrice
-        })),
-        subtotal: total,
-        taxes: calculateTaxes(),
-        total: calculateTotal()
+        clientId: user?.id,
+        typePaiement: paymentMethod === 'cash' ? 'COMPTANT' : paymentMethod === 'credit' ? 'CREDIT' : 'LOCATION',
+        vehiculeIds: cart.map(item => item.vehicle.id) // Le backend attend vehiculeIds
       }
 
-      // Simulation d'appel API
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const mockOrder = {
-        id: Date.now(),
-        orderNumber: `CMD-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
-        ...orderData,
-        status: paymentMethod === 'cash' ? 'confirmée' : 'en attente',
-        createdAt: new Date().toISOString()
-      }
+      // Utiliser le vrai service API
+      const createdOrder = await orderService.createOrder(orderData)
 
       toast.success('Commande créée avec succès !')
       clearCart()
       setStep(3)
-      
+
+      // Sauvegarder l'ID de commande pour la confirmation
+      localStorage.setItem('lastOrderId', createdOrder.id)
+
     } catch (error) {
-      toast.error('Erreur lors de la création de la commande')
+      console.error('Erreur lors de la création de commande:', error)
+      toast.error(error.message || 'Erreur lors de la création de la commande')
     } finally {
       setIsProcessing(false)
     }

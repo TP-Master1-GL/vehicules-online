@@ -64,4 +64,29 @@ public abstract class Vehicule {
         }
         return prix;
     }
+
+    // Getters et setters explicites
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getMarque() { return marque; }
+    public void setMarque(String marque) { this.marque = marque; }
+
+    public String getModele() { return modele; }
+    public void setModele(String modele) { this.modele = modele; }
+
+    public BigDecimal getPrixBase() { return prixBase; }
+    public void setPrixBase(BigDecimal prixBase) { this.prixBase = prixBase; }
+
+    public LocalDate getDateStock() { return dateStock; }
+    public void setDateStock(LocalDate dateStock) { this.dateStock = dateStock; }
+
+    public Boolean getEnSolde() { return enSolde; }
+    public void setEnSolde(Boolean enSolde) { this.enSolde = enSolde; }
+
+    public BigDecimal getPourcentageSolde() { return pourcentageSolde; }
+    public void setPourcentageSolde(BigDecimal pourcentageSolde) { this.pourcentageSolde = pourcentageSolde; }
+
+    public List<OptionVehicule> getOptions() { return options; }
+    public void setOptions(List<OptionVehicule> options) { this.options = options; }
 }

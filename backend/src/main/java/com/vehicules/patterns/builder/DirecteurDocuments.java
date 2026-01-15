@@ -10,12 +10,39 @@ public class DirecteurDocuments {
     }
     
     public void construireLiasseComplete(Commande commande) {
-        builder.ajouterDemandeImmatriculation("Commande #" + commande.getId());
-        builder.ajouterCertificatCession("Véhicule commandé par " + commande.getClient().getNom());
-        builder.ajouterBonCommande("Montant total: " + commande.getMontantTotal() + "€");
+        // Pour la demande d'immatriculation
+        String numeroSerie = "CMD-" + commande.getId();
+        String clientNom = commande.getClient().getNom();
+        String vehiculeModele = commande.getLignes() != null && !commande.getLignes().isEmpty()
+            ? commande.getLignes().get(0).getVehicule().getModele()
+            : "Modèle inconnu";
+
+        builder.ajouterDemandeImmatriculation(numeroSerie, clientNom, vehiculeModele);
+
+        // Pour le certificat de cession
+        String vendeur = "AutoCorp";
+        String acheteur = commande.getClient().getNom();
+        String vehiculeInfo = vehiculeModele;
+
+        builder.ajouterCertificatCession(vendeur, acheteur, vehiculeInfo);
+
+        // Pour le bon de commande
+        String commandeId = "CMD-" + commande.getId();
+        String client = commande.getClient().getNom();
+        double montant = commande.getMontantTotal() != null
+            ? commande.getMontantTotal().doubleValue()
+            : 0.0;
+
+        builder.ajouterBonCommande(commandeId, client, montant);
     }
-    
+
     public void construireLiasseMinimale(Commande commande) {
-        builder.ajouterBonCommande("Commande simplifiée #" + commande.getId());
+        String commandeId = "CMD-" + commande.getId();
+        String client = commande.getClient().getNom();
+        double montant = commande.getMontantTotal() != null
+            ? commande.getMontantTotal().doubleValue()
+            : 0.0;
+
+        builder.ajouterBonCommande(commandeId, client, montant);
     }
 }

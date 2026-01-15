@@ -80,11 +80,12 @@ const cartService = {
     }
   },
 
-  // Annuler la dernière action (Pattern Command - supporté par le backend)
+  // Annuler la dernière action (Pattern Command - pas directement supporté par le backend actuel)
   undoLastAction: async () => {
     try {
-      const response = await api.post('/panier/undo');
-      return response.data;
+      // Simulation - le backend actuel ne supporte pas l'annulation directe
+      console.warn('undoLastAction: Pattern Command à implémenter côté backend');
+      return { success: false, message: 'Fonctionnalité non disponible' };
     } catch (error) {
       throw {
         message: error.response?.data?.message || 'Erreur lors de l\'annulation',

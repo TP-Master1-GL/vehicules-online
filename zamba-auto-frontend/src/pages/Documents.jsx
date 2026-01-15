@@ -1,7 +1,7 @@
 // src/pages/Documents.jsx
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getOrderDocuments, downloadDocument } from '../api/orders'
+import documentService from '../api/documents'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -25,35 +25,27 @@ const Documents = () => {
       setError('')
 
       if (selectedOrderId) {
-        const docs = await getOrderDocuments(selectedOrderId)
-        setDocuments(docs)
+        // Utiliser la nouvelle méthode pour obtenir les documents disponibles
+        const availableDocs = await documentService.getAvailableDocuments(selectedOrderId)
+        setDocuments(availableDocs)
       } else {
         // Charger les documents de toutes les commandes si pas de commande sélectionnée
         // Pour l'instant, on simule avec des données
         setDocuments([
           {
-            id: 1,
-            type: 'BON_COMMANDE',
-            nom: 'Bon de commande - Commande #12345',
-            dateCreation: '2024-01-15',
-            format: 'PDF',
-            taille: '245 KB'
+            id: 'bon_commande',
+            name: 'Bon de commande',
+            available: true
           },
           {
-            id: 2,
-            type: 'IMMATRICULATION',
-            nom: 'Demande d\'immatriculation - Commande #12345',
-            dateCreation: '2024-01-15',
-            format: 'PDF',
-            taille: '180 KB'
+            id: 'immatriculation',
+            name: 'Demande d\'immatriculation',
+            available: true
           },
           {
-            id: 3,
-            type: 'CESSION',
-            nom: 'Certificat de cession - Commande #12345',
-            dateCreation: '2024-01-15',
-            format: 'PDF',
-            taille: '156 KB'
+            id: 'cession',
+            name: 'Certificat de cession',
+            available: true
           }
         ])
       }
@@ -65,10 +57,13 @@ const Documents = () => {
     }
   }
 
-  const handleDownload = async (documentId, documentName) => {
+  const handleDownload = async (documentType, documentName) => {
     try {
-      await downloadDocument(documentId)
-      // Le téléchargement est géré par l'API
+      if (selectedOrderId) {
+        await documentService.downloadDocument(selectedOrderId, documentType)
+      } else {
+        setError('Veuillez sélectionner une commande')
+      }
     } catch (err) {
       setError('Erreur lors du téléchargement du document')
       console.error('Erreur téléchargement:', err)
@@ -173,7 +168,7 @@ const Documents = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(doc.id, doc.nom)}
+                      onClick={() => handleDownload(doc.id, doc.name)}
                       className="flex items-center space-x-2"
                     >
                       <Eye className="w-4 h-4" />
@@ -182,7 +177,7 @@ const Documents = () => {
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => handleDownload(doc.id, doc.nom)}
+                      onClick={() => handleDownload(doc.id, doc.name)}
                       className="flex items-center space-x-2"
                     >
                       <Download className="w-4 h-4" />

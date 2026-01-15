@@ -1,74 +1,56 @@
 -- =========================
--- CLIENTS
+-- DONNEES DE TEST POUR MYSQL/H2
+-- Compatible avec les entités JPA
 -- =========================
 
--- Client Particulier
-INSERT INTO client (id, nom, type_client) VALUES (1, 'Tsabeng Delphan', 'PARTICULIER');
-INSERT INTO particulier (id, prenom) VALUES (1, 'Delphan');
+-- Nettoyage des tables existantes (utilise des suppressions dans le bon ordre)
+-- Les suppressions sont gérées par Hibernate avec ddl-auto=create-drop
+
+-- Clients
+INSERT INTO client (nom, email, telephone, adresse, dtype) VALUES
+('Tsabeng Delphan', 'delphan@example.com', '+237123456789', 'Yaoundé, Cameroun', 'Particulier'),
+('AUTO-CORP', 'contact@autocorp.com', '+237987654321', 'Douala, Cameroun', 'Societe');
+
+-- Particulier
+INSERT INTO client_particulier (id, prenom, numero_permis, password, role, enabled) VALUES
+(1, 'Delphan', 'PERMIS123456', '$2a$10$example.hash', 'USER', true);
 
 -- Société
-INSERT INTO client (id, nom, type_client) VALUES (2, 'AUTO-CORP', 'SOCIETE');
-INSERT INTO societe (id, numero_siret) VALUES (2, '12345678901234');
+INSERT INTO societe (id, numero_siret) VALUES
+(2, '12345678901234');
 
--- Filiales de la société AUTO-CORP
-INSERT INTO client (id, nom, type_client) VALUES (3, 'AUTO-CORP Yaounde', 'FILIALE');
-INSERT INTO filiale (id, societe_id, localisation) VALUES (3, 2, 'Yaounde');
+-- Filiales
+INSERT INTO filiale (localisation, societe_id) VALUES
+('Yaoundé', 2),
+('Douala', 2);
 
-INSERT INTO client (id, nom, type_client) VALUES (4, 'AUTO-CORP Douala', 'FILIALE');
-INSERT INTO filiale (id, societe_id, localisation) VALUES (4, 2, 'Douala');
+-- Options de véhicules
+INSERT INTO option_vehicule (nom, description, prix, obligatoire) VALUES
+('Sièges sport', 'Sièges sportifs confortables', 50000.00, false),
+('Sièges cuir', 'Sièges en cuir véritable', 80000.00, false),
+('Toit ouvrant', 'Toit ouvrant électrique', 30000.00, false);
 
--- =========================
--- OPTIONS VEHICULE
--- =========================
+-- Incompatibilités d'options
+INSERT INTO option_vehicule_options_incompatibles (option_vehicule_id, options_incompatibles_id) VALUES
+(1, 2),
+(2, 1);
 
-INSERT INTO option_vehicule (id, nom)
-VALUES (1, 'Sieges sport');
+-- Véhicules
+INSERT INTO vehicule (marque, modele, prix_base, date_stock, en_solde, dtype) VALUES
+('Toyota', 'Corolla', 8500000.00, '2024-01-15', false, 'AutomobileEssence'),
+('Yamaha', 'E-Scoot', 1800000.00, '2024-02-20', false, 'ScooterElectrique');
 
-INSERT INTO option_vehicule (id, nom)
-VALUES (2, 'Sieges cuir');
+-- Association véhicule-options
+INSERT INTO vehicule_option (vehicule_id, option_id) VALUES
+(1, 1),
+(2, 3);
 
-INSERT INTO option_vehicule (id, nom)
-VALUES (3, 'Toit ouvrant');
+-- Commandes
+INSERT INTO commande (date_creation, statut, montant_total, pays_livraison, client_id, dtype) VALUES
+('2024-01-15 10:00:00', 'VALIDEE', 8500000.00, 'FR', 1, 'CommandeComptant'),
+('2024-02-20 14:30:00', 'EN_COURS', 1800000.00, 'BE', 2, 'CommandeCredit');
 
--- Incompatibilités
-INSERT INTO option_vehicule_options_incompatibles
-(option_vehicule_id, options_incompatibles_id)
-VALUES (1, 2);
-
-INSERT INTO option_vehicule_options_incompatibles
-(option_vehicule_id, options_incompatibles_id)
-VALUES (2, 1);
-
--- =========================
--- VEHICULES
--- =========================
-
-INSERT INTO vehicule
-(id, type_vehicule, marque, modele, prix_base)
-VALUES
-(1, 'AUTOMOBILE_ESSENCE', 'Toyota', 'Corolla', 8500000);
-
-INSERT INTO vehicule
-(id, type_vehicule, marque, modele, prix_base)
-VALUES
-(2, 'SCOOTER_ELECTRIQUE', 'Yamaha', 'E-Scoot', 1800000);
-
-INSERT INTO vehicule_options (vehicule_id, options_id)
-VALUES (1, 1);
-
-INSERT INTO vehicule_options (vehicule_id, options_id)
-VALUES (2, 3);
-
--- =========================
--- COMMANDES
--- =========================
-
-INSERT INTO commande
-(id, type_commande, montant, client_id, vehicule_id)
-VALUES
-(1, 'COMPTANT', 8500000, 1, 1);
-
-INSERT INTO commande
-(id, type_commande, montant, client_id, vehicule_id)
-VALUES
-(2, 'CREDIT', 1800000, 2, 2);
+-- Lignes de commande
+INSERT INTO ligne_commande (quantite, prix_unitaire, prix_total, commande_id, vehicule_id) VALUES
+(1, 8500000.00, 8500000.00, 1, 1),
+(1, 1800000.00, 1800000.00, 2, 2);

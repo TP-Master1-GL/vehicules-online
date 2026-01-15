@@ -1,4 +1,4 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.api.dto.VehiculeDTO;
 import com.vehicules.services.CatalogueService;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/catalogue")
+@RequestMapping("/api/catalogue")
 @RequiredArgsConstructor
 @Tag(name = "Catalogue", description = "API pour la gestion du catalogue de véhicules")
 public class CatalogueController {

@@ -5,6 +5,7 @@ import com.vehicules.api.dto.auth.LoginRequestDTO;
 import com.vehicules.api.dto.auth.RegisterRequestDTO;
 import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.ClientParticulier;
+import com.vehicules.core.entities.Societe;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +36,6 @@ public class AuthenticationService {
         if (request.getNom() == null || request.getNom().trim().isEmpty()) {
             throw new IllegalArgumentException("Le nom est obligatoire");
         }
-        if (request.getPrenom() == null || request.getPrenom().trim().isEmpty()) {
-            throw new IllegalArgumentException("Le prénom est obligatoire");
-        }
         if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
             throw new IllegalArgumentException("L'email est obligatoire");
         }
@@ -47,8 +45,15 @@ public class AuthenticationService {
         if (request.getTelephone() == null || request.getTelephone().trim().isEmpty()) {
             throw new IllegalArgumentException("Le téléphone est obligatoire");
         }
-        if (request.getNumeroPermis() == null || request.getNumeroPermis().trim().isEmpty()) {
-            throw new IllegalArgumentException("Le numéro de permis est obligatoire");
+
+        // Pour les particuliers, vérifier prénom et numéro de permis
+        if ("individual".equals(request.getCustomerType())) {
+            if (request.getPrenom() == null || request.getPrenom().trim().isEmpty()) {
+                throw new IllegalArgumentException("Le prénom est obligatoire pour les particuliers");
+            }
+            if (request.getNumeroPermis() == null || request.getNumeroPermis().trim().isEmpty()) {
+                throw new IllegalArgumentException("Le numéro de permis est obligatoire pour les particuliers");
+            }
         }
 
         // Vérifier si l'email existe déjà
@@ -56,18 +61,36 @@ public class AuthenticationService {
             throw new IllegalArgumentException("L'email est déjà utilisé");
         }
 
-        // Créer un nouveau client
-        ClientParticulier client = new ClientParticulier();
-        client.setNom(request.getNom().trim());
-        client.setPrenom(request.getPrenom().trim());
-        client.setEmail(request.getEmail().trim().toLowerCase());
-        client.setTelephone(request.getTelephone().trim());
-        client.setAdresse(request.getAdresse() != null && !request.getAdresse().trim().isEmpty()
-            ? request.getAdresse().trim()
-            : "Adresse non spécifiée");
-        client.setNumeroPermis(request.getNumeroPermis().trim());
-        client.setPassword(passwordEncoder.encode(request.getPassword()));
-        client.setRole(request.getRole() != null ? request.getRole() : Role.USER);
+        Client client;
+
+        // Créer le bon type de client selon customerType
+        if ("company".equals(request.getCustomerType()) || "professional".equals(request.getCustomerType())) {
+            // Pour les entreprises, créer une Société
+            Societe societe = new Societe();
+            societe.setNom(request.getNom().trim());
+            societe.setEmail(request.getEmail().trim().toLowerCase());
+            societe.setTelephone(request.getTelephone().trim());
+            societe.setAdresse(request.getAdresse() != null && !request.getAdresse().trim().isEmpty()
+                ? request.getAdresse().trim()
+                : "Adresse non spécifiée");
+            societe.setRaisonSociale(request.getNom().trim() + " SARL"); // Valeur par défaut
+            societe.setSiret("12345678901234"); // Valeur par défaut, devrait être fourni par le frontend
+            client = societe;
+        } else {
+            // Pour les particuliers, créer un ClientParticulier
+            ClientParticulier clientParticulier = new ClientParticulier();
+            clientParticulier.setNom(request.getNom().trim());
+            clientParticulier.setPrenom(request.getPrenom().trim());
+            clientParticulier.setEmail(request.getEmail().trim().toLowerCase());
+            clientParticulier.setTelephone(request.getTelephone().trim());
+            clientParticulier.setAdresse(request.getAdresse() != null && !request.getAdresse().trim().isEmpty()
+                ? request.getAdresse().trim()
+                : "Adresse non spécifiée");
+            clientParticulier.setNumeroPermis(request.getNumeroPermis().trim());
+            clientParticulier.setPassword(passwordEncoder.encode(request.getPassword()));
+            clientParticulier.setRole(request.getRole() != null ? request.getRole() : Role.USER);
+            client = clientParticulier;
+        }
 
         // Sauvegarder le client
         Client savedClient = clientRepository.save(client);
@@ -76,12 +99,15 @@ public class AuthenticationService {
         String jwtToken = jwtService.generateToken(savedClient);
         String refreshToken = jwtService.generateRefreshToken(savedClient);
 
+        // Pour les sociétés, prenom sera vide
+        String prenom = savedClient.getPrenom();
+
         return new AuthenticationResponseDTO(
             jwtToken,
             refreshToken,
             savedClient.getEmail(),
             savedClient.getNom(),
-            savedClient.getPrenom(),
+            prenom,
             savedClient.getRole()
         );
     }
@@ -103,12 +129,15 @@ public class AuthenticationService {
         String jwtToken = jwtService.generateToken(client);
         String refreshToken = jwtService.generateRefreshToken(client);
 
+        // Pour les sociétés, prenom sera vide
+        String prenom = client.getPrenom();
+
         return new AuthenticationResponseDTO(
             jwtToken,
             refreshToken,
             client.getEmail(),
             client.getNom(),
-            client.getPrenom(),
+            prenom,
             client.getRole()
         );
     }

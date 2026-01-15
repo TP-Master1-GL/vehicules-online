@@ -2,12 +2,10 @@ package com.vehicules.patterns.composite;
 
 public class ClientParticulierComposite implements ClientComponent {
     private String nom;
-    private String email;
     private double totalCommandes;
     
-    public ClientParticulierComposite(String nom, String email, double totalCommandes) {
+    public ClientParticulierComposite(String nom, double totalCommandes) {
         this.nom = nom;
-        this.email = email;
         this.totalCommandes = totalCommandes;
     }
     

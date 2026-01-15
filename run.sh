@@ -28,11 +28,14 @@ fi
 
 echo "✅ Maven détecté"
 
-# Vérifier que PostgreSQL est accessible (optionnel pour le développement)
-if command -v psql &> /dev/null; then
-    echo "✅ PostgreSQL client détecté"
+# Vérifier que MySQL est accessible (optionnel pour le développement)
+if command -v mysql &> /dev/null; then
+    echo "✅ MySQL client détecté"
+echo "ℹ️  Assurez-vous que MySQL est démarré et que la base 'vehicule_db' existe"
+echo "   Commande: CREATE DATABASE vehicule_db;"
+echo "   OU utilisez H2 en mémoire pour les tests (modifier application.properties)"
 else
-    echo "⚠️  PostgreSQL client non détecté - vérifiez votre configuration de base de données"
+    echo "⚠️  MySQL client non détecté - vérifiez votre configuration de base de données"
 fi
 
 # Aller dans le répertoire backend
@@ -56,7 +59,8 @@ echo "✅ Package créé avec succès"
 
 echo "🚀 Démarrage de l'application..."
 echo "📖 API Documentation disponible sur: http://localhost:8080/swagger-ui.html"
-echo "🔄 Base de données: PostgreSQL (vérifiez application.properties)"
+echo "🔄 Base de données: MySQL (base: vehicule_db)"
+echo "🌐 Frontend: http://localhost:3000 (à démarrer séparément)"
 echo ""
 echo "Appuyez sur Ctrl+C pour arrêter l'application"
 echo ""

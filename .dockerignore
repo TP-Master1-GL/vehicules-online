@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Scripts
+scripts/
+run.sh
+
+# Docker
+docker/
+docker-compose.yml
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Environnements
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Tests
+test/
+tests/
+__tests__/
+
+# Build outputs
+target/
+dist/
+build/

@@ -1,6 +1,7 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.core.entities.Client;
+import com.vehicules.core.entities.ClientParticulier;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +14,21 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    private boolean isClientEnabled(Client client) {
+        if (client instanceof ClientParticulier) {
+            ClientParticulier cp = (ClientParticulier) client;
+            return cp.getEnabled() != null ? cp.getEnabled() : true;
+        }
+        return true; // Les sociétés sont toujours actives par défaut
+    }
 
     @GetMapping("/utilisateurs")
     public ResponseEntity<List<Client>> getAllUtilisateurs(
@@ -30,11 +39,11 @@ public class AdminController {
 
         if (role != null) {
             utilisateurs = clientRepository.findAll().stream()
-                    .filter(u -> u.getRole() == role && u.isEnabled() == actif)
+                    .filter(u -> u.getRole() == role && isClientEnabled(u) == actif)
                     .toList();
         } else {
             utilisateurs = clientRepository.findAll().stream()
-                    .filter(u -> u.isEnabled() == actif)
+                    .filter(u -> isClientEnabled(u) == actif)
                     .toList();
         }
 

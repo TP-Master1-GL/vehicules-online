@@ -35,6 +35,22 @@ public class PdfGenerationService {
                 break;
             case BON_COMMANDE:
                 return pdfService.genererBonCommande(commande);
+            case FACTURE:
+                if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
+                    Vehicule vehicule = commande.getLignes().get(0).getVehicule();
+                    if (vehicule != null) {
+                        return pdfService.genererBonCommande(commande);
+                    }
+                }
+                break;
+            case CONTRAT_CREDIT:
+                if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
+                    Vehicule vehicule = commande.getLignes().get(0).getVehicule();
+                    if (vehicule != null) {
+                        return pdfService.genererBonCommande(commande);
+                    }
+                }
+                break;
         }
 
         throw new IllegalArgumentException("Type de document non supporté: " + type);

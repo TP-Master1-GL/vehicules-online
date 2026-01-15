@@ -1,4 +1,4 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.api.dto.CommandeDTO;
 import com.vehicules.api.dto.LigneCommandeDTO;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/commandes")
+@RequestMapping("/api/commandes")
 @RequiredArgsConstructor
 @Tag(name = "Commandes", description = "API pour la gestion des commandes")
 public class CommandeController {
@@ -210,16 +210,16 @@ public class CommandeController {
 
     // Classes internes pour les requêtes et réponses
     public static class CreerCommandeRequest {
-        @Schema(description = "ID du client", example = "1", required = true)
+        @Schema(description = "ID du client", example = "1")
         private Long clientId;
         
-        @Schema(description = "Type de paiement (COMPTANT ou CREDIT)", example = "COMPTANT", required = true)
+        @Schema(description = "Type de paiement (COMPTANT ou CREDIT)", example = "COMPTANT")
         private String typePaiement;
         
-        @Schema(description = "IDs des véhicules à commander", example = "[1, 2, 3]", required = true)
+        @Schema(description = "IDs des véhicules à commander", example = "[1, 2, 3]")
         private Long[] vehiculeIds;
         
-        @Schema(description = "Pays de livraison (FR, BE, LU)", example = "FR", required = true)
+        @Schema(description = "Pays de livraison (FR, BE, LU)", example = "FR")
         private String paysLivraison;
 
         // Getters et setters
@@ -238,9 +238,7 @@ public class CommandeController {
 
     public static class UpdateStatutRequest {
         @Schema(description = "Nouveau statut de la commande", 
-                example = "VALIDEE", 
-                allowableValues = {"EN_COURS", "VALIDEE", "CONFIRMEE", "PAYEE", "LIVREE", "ANNULEE"},
-                required = true)
+                example = "VALIDEE")
         private String statut;
 
         public String getStatut() { return statut; }

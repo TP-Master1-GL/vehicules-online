@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import vehicleService from '../api/vehicles'
+import vehiculesService from '../api/vehicules'
 import Button from '../components/ui/Button'
 import Alert from '../components/ui/Alert'
 import Tabs from '../components/ui/Tabs'
@@ -33,64 +33,35 @@ const VehicleDetail = () => {
   const fetchVehicle = async () => {
     try {
       setLoading(true)
-      // Simulation - À remplacer par l'appel API
-      const mockVehicle = {
-        id: parseInt(id),
-        name: "Toyota RAV4",
-        brand: "Toyota",
-        model: "RAV4",
-        type: "SUV",
-        year: 2023,
-        price: 28000,
-        oldPrice: 30000,
-        clearance: true,
-        rating: 4.8,
-        location: "Douala",
-        fuel: "Diesel",
-        transmission: "Automatique",
-        km: 15000,
-        color: "Blanc",
-        seats: 5,
-        doors: 5,
-        power: "150 ch",
-        consumption: "5.5L/100km",
-        co2: "120 g/km",
-        warranty: "12 mois",
-        features: [
-          "Climatisation automatique",
-          "Toit panoramique",
-          "Caméra de recul",
-          "GPS intégré",
-          "Sièges chauffants",
-          "Apple CarPlay/Android Auto",
-          "Régulateur de vitesse",
-          "Aide au stationnement",
-          "LED avant",
-          "Jantes aluminium 18\""
-        ],
-        description: "Toyota RAV4 2023 en excellent état. Véhicule entretenu selon les préconisations constructeur. Carrosserie sans impact. Intérieur propre et bien entretenu. Contrôle technique OK. Premier main.",
-        images: ["🚗", "🚙", "🛻"],
-        options: [
-          { id: 1, name: "Sièges en cuir", price: 1200, category: "intérieur" },
-          { id: 2, name: "Toit panoramique", price: 1500, category: "carrosserie" },
-          { id: 3, name: "Système audio premium", price: 700, category: "multimédia" },
-          { id: 4, name: "Radar de recul", price: 400, category: "sécurité" },
-          { id: 5, name: "Peinture métallisée", price: 500, category: "carrosserie" }
-        ],
-        seller: {
-          name: "Concession Toyota Douala",
-          rating: 4.9,
-          sales: 125,
-          memberSince: "2020"
-        },
-        similarVehicles: [
-          { id: 2, name: "Renault Clio", price: 16500, type: "Citadine" },
-          { id: 4, name: "Ford Transit", price: 25000, type: "Utilitaire" },
-          { id: 5, name: "Peugeot 208", price: 19500, type: "Citadine" }
-        ]
+      // Utiliser le vrai service API
+      const vehicleData = await vehiculesService.getVehiculeById(id)
+
+      // Adapter le format du backend au format frontend
+      const formattedVehicle = {
+        id: vehicleData.id,
+        name: vehicleData.nom,
+        brand: vehicleData.marque,
+        model: vehicleData.nom.split(' ')[1] || vehicleData.nom, // Extraire le modèle
+        type: vehicleData.typeVehicule,
+        year: vehicleData.annee,
+        price: vehicleData.prix,
+        oldPrice: vehicleData.prixPromotion || null,
+        clearance: vehicleData.enSoldes || false,
+        rating: 4.5, // Valeur par défaut
+        location: vehicleData.localisation || "Douala",
+        fuel: vehicleData.typeCarburant,
+        transmission: vehicleData.transmission || "Automatique",
+        km: vehicleData.kilometrage || 0,
+        promo: vehicleData.enPromotion || false,
+        description: vehicleData.description || `Véhicule ${vehicleData.nom} en excellent état.`,
+        features: vehicleData.options?.map(opt => opt.nom) || [],
+        images: vehicleData.images || [`https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop`],
+        warranty: "2 ans",
+        financing: true,
+        tradeIn: true
       }
-      
-      setVehicle(mockVehicle)
+
+      setVehicle(formattedVehicle)
     } catch (error) {
       toast.error('Erreur lors du chargement du véhicule')
     } finally {

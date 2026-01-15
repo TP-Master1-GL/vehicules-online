@@ -1,4 +1,4 @@
-package com.vehicules.patterns.abstractFactory;
+package com.vehicules.patterns.abstractfactory;
 
 import com.vehicules.core.entities.Vehicule;
 

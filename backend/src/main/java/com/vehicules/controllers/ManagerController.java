@@ -1,4 +1,4 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.core.entities.Commande;
 import com.vehicules.core.entities.Vehicule;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/manager")
+@RequestMapping("/api/manager")
 @CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
 public class ManagerController {

@@ -3,16 +3,10 @@ package com.vehicules.core.entities;
 import com.vehicules.core.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Collections;
 
 @Entity
 @Table(name = "client")
@@ -20,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Client implements UserDetails {
+public abstract class Client {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,55 +36,26 @@ public abstract class Client implements UserDetails {
 
     public abstract String getType();
 
-    // Méthodes UserDetails pour Spring Security
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Pour ClientParticulier, retourner le rôle
-        if (this instanceof ClientParticulier) {
-            ClientParticulier particulier = (ClientParticulier) this;
-            return Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + particulier.getRole().name())
-            );
-        }
-        // Pour Societe ou autres types
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-    }
+    // Getters et setters explicites pour les champs de base
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    @Override
-    public String getPassword() {
-        if (this instanceof ClientParticulier) {
-            return ((ClientParticulier) this).getPassword();
-        }
-        return ""; // ou retourner un mot de passe par défaut pour les sociétés
-    }
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
 
-    @Override
-    public String getUsername() {
-        return email;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
+    public String getTelephone() { return telephone; }
+    public void setTelephone(String telephone) { this.telephone = telephone; }
 
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
+    public String getAdresse() { return adresse; }
+    public void setAdresse(String adresse) { this.adresse = adresse; }
 
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    public List<Commande> getCommandes() { return commandes; }
+    public void setCommandes(List<Commande> commandes) { this.commandes = commandes; }
 
-    @Override
-    public boolean isEnabled() {
-        if (this instanceof ClientParticulier) {
-            return ((ClientParticulier) this).isEnabled();
-        }
-        return true;
-    }
+
 
     // Méthodes utilitaires pour les services
     public String getPrenom() {

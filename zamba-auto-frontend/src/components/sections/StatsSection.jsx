@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { FaCar, FaUsers, FaStar, FaClock } from 'react-icons/fa'
+import './StatsSection.css'
 
 const StatsSection = () => {
   const [countedValues, setCountedValues] = useState([0, 0, 0, 0])
@@ -194,30 +195,6 @@ const StatsSection = () => {
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
     </section>
   )
 }

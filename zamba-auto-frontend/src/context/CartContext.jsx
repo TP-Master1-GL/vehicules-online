@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import cartService from '../api/cart'
+import { useAuth } from './AuthContext'
 
 // CORRECTION : Ajouter 'export' devant createContext
 export const CartContext = createContext()
@@ -14,6 +15,7 @@ export const useCart = () => {
 }
 
 export const CartProvider = ({ children }) => {
+  const { user } = useAuth()
   const [cart, setCart] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -53,9 +55,9 @@ export const CartProvider = ({ children }) => {
 
       // Utiliser le service API pour ajouter au panier
       const cartItem = {
-        vehicleId: vehicle.id,
-        selectedOptions: options,
-        quantity: quantity
+        clientId: user?.id || 1, // Utiliser l'ID de l'utilisateur connecté
+        vehiculeId: vehicle.id,
+        optionsIds: options?.map(opt => opt.id) || []
       }
 
       await cartService.addToCart(cartItem)

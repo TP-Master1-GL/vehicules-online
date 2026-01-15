@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL pour l'environnement de développement/production
+  postgres:
+    image: postgres:15
+    container_name: vehicules-postgres
+    environment:
+      POSTGRES_DB: vehicules_db
+      POSTGRES_USER: vehicules_user
+      POSTGRES_PASSWORD: vehicules_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - vehicules-network
+    restart: unless-stopped
+
+  # PgAdmin pour l'administration de la base de données
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: vehicules-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@vehicules.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - vehicules-network
+    restart: unless-stopped
+
+  # Backend Spring Boot (optionnel - peut être démarré séparément en développement)
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: vehicules-backend
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - SPRING_PROFILES_ACTIVE=prod
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/vehicules_db
+  #     - SPRING_DATASOURCE_USERNAME=vehicules_user
+  #     - SPRING_DATASOURCE_PASSWORD=vehicules_password
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - vehicules-network
+  #   restart: unless-stopped
+
+  # Frontend React (optionnel - pour déploiement en production)
+  # frontend:
+  #   build:
+  #     context: ./zamba-auto-frontend
+  #     dockerfile: Dockerfile
+  #   container_name: vehicules-frontend
+  #   ports:
+  #     - "3000:80"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - vehicules-network
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  vehicules-network:
+    driver: bridge

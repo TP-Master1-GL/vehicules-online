@@ -205,23 +205,27 @@ const orderService = {
     };
   },
 
-  // Récupérer les documents d'une commande
-  getOrderDocuments: async (orderId) => {
+  // Générer un document PDF (utilise les routes PDF du backend)
+  generateDocument: async (orderId, documentType) => {
     try {
-      const response = await api.get(`/commandes/${orderId}/documents`);
+      // documentType peut être : 'immatriculation', 'cession', 'bon_commande'
+      const response = await api.post('/pdf/generate', {
+        commandeId: orderId,
+        documentType: documentType
+      });
       return response.data;
     } catch (error) {
       throw {
-        message: error.response?.data?.message || 'Erreur lors de la récupération des documents',
+        message: error.response?.data?.message || 'Erreur lors de la génération du document',
         status: error.response?.status
       };
     }
   },
 
-  // Télécharger un document
-  downloadDocument: async (orderId, documentId) => {
+  // Télécharger un document PDF
+  downloadDocument: async (orderId, documentType) => {
     try {
-      const response = await api.get(`/commandes/${orderId}/documents/${documentId}/download`, {
+      const response = await api.get(`/pdf/download/${orderId}/${documentType}`, {
         responseType: 'blob'
       });
 
@@ -229,7 +233,7 @@ const orderService = {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `document-${documentId}.pdf`);
+      link.setAttribute('download', `${documentType}-${orderId}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -239,6 +243,45 @@ const orderService = {
     } catch (error) {
       throw {
         message: error.response?.data?.message || 'Erreur lors du téléchargement du document',
+        status: error.response?.status
+      };
+    }
+  },
+
+  // Télécharger la liasse complète de documents
+  downloadDocumentBundle: async (orderId) => {
+    try {
+      const response = await api.get(`/pdf/liasse/${orderId}`, {
+        responseType: 'blob'
+      });
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `liasse-complete-${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true };
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Erreur lors du téléchargement de la liasse',
+        status: error.response?.status
+      };
+    }
+  },
+
+  // Aperçu d'un document PDF
+  previewDocument: async (orderId, documentType) => {
+    try {
+      const response = await api.get(`/pdf/preview/${orderId}/${documentType}`);
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Erreur lors de l\'aperçu du document',
         status: error.response?.status
       };
     }

@@ -1,7 +1,5 @@
 package com.vehicules.patterns.decorator;
 
-import java.time.LocalDate;
-
 /**
  * Décorateur pour les véhicules neufs
  * Pattern: Decorator (Concrete Decorator)

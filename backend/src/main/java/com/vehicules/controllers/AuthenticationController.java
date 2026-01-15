@@ -1,4 +1,4 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.api.dto.auth.AuthenticationResponseDTO;
 import com.vehicules.api.dto.auth.LoginRequestDTO;
@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
 public class AuthenticationController {
 
@@ -71,5 +71,10 @@ public class AuthenticationController {
     public ResponseEntity<String> refreshToken(@RequestBody String refreshToken) {
         // TODO: Implémenter le refresh token
         return ResponseEntity.ok("Refresh token functionality - TODO");
+
     }
+    
+
 }
+
+

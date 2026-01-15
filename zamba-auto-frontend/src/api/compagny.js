@@ -1,30 +1,37 @@
-// CORRECTION : Changer l'import pour utiliser l'export par défaut
+// Service pour la gestion des sociétés - utilisant les routes backend /societe/*
 import api from './auth.js'
 
 const companyService = {
-  // Récupérer les informations de l'entreprise (SocieteController)
-  getCompany: async (companyId) => {
+  // Récupérer toutes les sociétés (SocieteController)
+  getAllCompanies: async () => {
     try {
       const response = await api.get('/societe');
       return response.data;
     } catch (error) {
       throw {
-        message: error.response?.data?.message || 'Erreur lors de la récupération des informations de l\'entreprise',
+        message: error.response?.data?.message || 'Erreur lors de la récupération des sociétés',
         status: error.response?.status
       };
     }
   },
 
-  // Mettre à jour les informations de l'entreprise (non implémenté côté backend)
-  updateCompany: async (companyId, companyData) => {
-    console.warn('updateCompany: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
+  // Récupérer une société par ID
+  getCompany: async (companyId) => {
+    try {
+      const response = await api.get(`/societe/${companyId}`);
+      return response.data;
+    } catch (error) {
+      throw {
+        message: error.response?.data?.message || 'Erreur lors de la récupération de la société',
+        status: error.response?.status
+      };
+    }
   },
 
-  // Récupérer les filiales
+  // Récupérer les filiales d'une société
   getSubsidiaries: async (companyId) => {
     try {
-      const response = await api.get('/societe/filiales');
+      const response = await api.get(`/societe/${companyId}/filiales`);
       return response.data;
     } catch (error) {
       throw {
@@ -34,28 +41,10 @@ const companyService = {
     }
   },
 
-  // Créer une filiale (non implémenté côté backend)
-  createSubsidiary: async (companyId, subsidiaryData) => {
-    console.warn('createSubsidiary: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  // Mettre à jour une filiale (non implémenté côté backend)
-  updateSubsidiary: async (subsidiaryId, subsidiaryData) => {
-    console.warn('updateSubsidiary: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  // Supprimer une filiale (non implémenté côté backend)
-  deleteSubsidiary: async (subsidiaryId) => {
-    console.warn('deleteSubsidiary: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  // Récupérer les commandes de flotte (toutes les commandes société)
+  // Récupérer les commandes d'une société (flotte)
   getFleetOrders: async (companyId, params = {}) => {
     try {
-      const response = await api.get('/societe/commandes', { params });
+      const response = await api.get(`/societe/${companyId}/commandes`, { params });
       return response.data;
     } catch (error) {
       throw {
@@ -65,10 +54,10 @@ const companyService = {
     }
   },
 
-  // Statistiques de flotte
+  // Statistiques de flotte pour une société
   getFleetStatistics: async (companyId) => {
     try {
-      const response = await api.get('/societe/statistics');
+      const response = await api.get(`/societe/${companyId}/statistics`);
       return response.data;
     } catch (error) {
       throw {
@@ -76,6 +65,27 @@ const companyService = {
         status: error.response?.status
       };
     }
+  },
+
+  // Méthodes non implémentées côté backend - simulation ou messages informatifs
+  updateCompany: async (companyId, companyData) => {
+    console.warn('updateCompany: Fonctionnalité à implémenter côté backend');
+    return { success: false, message: 'Fonctionnalité non disponible' };
+  },
+
+  createSubsidiary: async (companyId, subsidiaryData) => {
+    console.warn('createSubsidiary: Fonctionnalité à implémenter côté backend');
+    return { success: false, message: 'Fonctionnalité non disponible' };
+  },
+
+  updateSubsidiary: async (subsidiaryId, subsidiaryData) => {
+    console.warn('updateSubsidiary: Fonctionnalité à implémenter côté backend');
+    return { success: false, message: 'Fonctionnalité non disponible' };
+  },
+
+  deleteSubsidiary: async (subsidiaryId) => {
+    console.warn('deleteSubsidiary: Fonctionnalité à implémenter côté backend');
+    return { success: false, message: 'Fonctionnalité non disponible' };
   },
 
   // Méthodes non encore implémentées côté backend - simulation ou messages informatifs

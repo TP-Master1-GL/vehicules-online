@@ -7,11 +7,9 @@ public class VehiculeCatalogueIterator implements CatalogueIterator {
 
     private final List<Vehicule> vehicules;
     private int index = 0;
-    private final int pageSize;
 
     public VehiculeCatalogueIterator(List<Vehicule> vehicules, int pageSize) {
         this.vehicules = vehicules;
-        this.pageSize = pageSize;
     }
 
     @Override
@@ -20,10 +18,15 @@ public class VehiculeCatalogueIterator implements CatalogueIterator {
     }
 
     @Override
-    public List<Vehicule> next() {
-        int end = Math.min(index + pageSize, vehicules.size());
-        List<Vehicule> page = vehicules.subList(index, end);
-        index = end;
-        return page;
+    public Vehicule next() {
+        if (!hasNext()) {
+            throw new IllegalStateException("Plus d'éléments dans l'itérateur");
+        }
+        return vehicules.get(index++);
+    }
+
+    @Override
+    public void reset() {
+        index = 0;
     }
 }

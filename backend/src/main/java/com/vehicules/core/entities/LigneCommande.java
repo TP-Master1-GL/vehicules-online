@@ -46,9 +46,12 @@ public class LigneCommande {
     @PrePersist
     @PreUpdate
     public void calculerPrixTotal() {
-        BigDecimal prixOptions = options.stream()
-                .map(OptionVehicule::getPrix)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal prixOptions = BigDecimal.ZERO;
+        if (options != null && !options.isEmpty()) {
+            prixOptions = options.stream()
+                    .map(OptionVehicule::getPrix)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
 
         this.prixTotal = prixUnitaire.add(prixOptions).multiply(BigDecimal.valueOf(quantite));
     }

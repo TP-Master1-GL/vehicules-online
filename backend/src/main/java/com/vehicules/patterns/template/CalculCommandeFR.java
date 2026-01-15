@@ -2,7 +2,6 @@
 package com.vehicules.patterns.template;
 
 import com.vehicules.core.entities.Commande;
-import com.vehicules.core.entities.LigneCommande;
 import org.springframework.stereotype.Component;
 
 @Component

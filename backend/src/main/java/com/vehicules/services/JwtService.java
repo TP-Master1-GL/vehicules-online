@@ -1,7 +1,6 @@
 package com.vehicules.services;
 
 import com.vehicules.core.entities.Client;
-import com.vehicules.core.enums.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -54,7 +53,7 @@ public class JwtService {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
-                .setSubject(client.getUsername())
+                .setSubject(client.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .claim("role", client.getRole().name())
@@ -67,6 +66,11 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+
+    public boolean isTokenValid(String token, Client client) {
+        final String username = extractUsername(token);
+        return (username.equals(client.getEmail())) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {

@@ -1,4 +1,4 @@
-package com.vehicules.api.controllers;
+package com.vehicules.controllers;
 
 import com.vehicules.patterns.bridge.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/forms")
+@RequestMapping("/api/forms")
 @CrossOrigin(origins = "*")
 public class BridgeFormController {
     

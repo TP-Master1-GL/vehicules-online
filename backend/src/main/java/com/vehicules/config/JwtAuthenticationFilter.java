@@ -14,9 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -27,17 +27,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private ClientRepository clientRepository;
 
+    // Liste des chemins publics qui ne nécessitent PAS d'authentification JWT
+    private static final List<String> PUBLIC_PATHS = List.of(
+        "/api/auth",        // Inscription et connexion
+        "/auth",           // Alternative sans /api
+        "/api/test",        // Test endpoints
+        "/test",            // Alternative
+        "/api/catalogue",  // Catalogue public
+        "/catalogue",      // Alternative
+        "/api/societe",    // Routes société
+        "/societe",        // Alternative
+        "/api/panier",     // Panier (public pour certaines actions)
+        "/panier",         // Alternative
+        "/swagger-ui",    // Documentation Swagger
+        "/v3/api-docs",    // Spécification OpenAPI
+        "/api-docs",      // Docs API
+        "/h2-console",    // Console H2
+        "/error"            // Pages d'erreur
+    );
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        
+        final String requestPath = request.getServletPath();
+        
+        // Vérifier si c'est une route publique
+        if (isPublicPath(requestPath)) {
+            logger.info("Route publique détectée, saut du filtre JWT: " + requestPath);
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Pas de token, continuer (le SecurityConfig gérera l'authentification)
             filterChain.doFilter(request, response);
             return;
         }
@@ -49,16 +79,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Client client = clientRepository.findByEmail(userEmail).orElse(null);
 
             if (client != null && jwtService.isTokenValid(jwt, client)) {
+                // Créer un UserDetails temporaire pour l'authentification
+                org.springframework.security.core.userdetails.User userDetails =
+                    new org.springframework.security.core.userdetails.User(
+                        client.getEmail(),
+                        "", // Pas besoin du mot de passe pour JWT
+                        true, true, true, true,
+                        java.util.Collections.singletonList(
+                            new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                                "ROLE_" + client.getRole().name()
+                            )
+                        )
+                    );
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                    client,
+                    userDetails,
                     null,
-                    client.getAuthorities()
+                    userDetails.getAuthorities()
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                
+                logger.info("Utilisateur authentifié: " + userEmail);
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+    
+    // Méthode pour vérifier si le chemin est public
+    private boolean isPublicPath(String path) {
+        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    }
+    
+    @Override
+    protected boolean shouldNotFilter(@org.springframework.lang.NonNull HttpServletRequest request) throws ServletException {
+        return isPublicPath(request.getServletPath());
     }
 }

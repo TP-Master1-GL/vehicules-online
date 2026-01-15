@@ -3,7 +3,6 @@ package com.vehicules.api.dto.auth;
 import com.vehicules.core.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequestDTO {
@@ -11,9 +10,7 @@ public class RegisterRequestDTO {
     @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
     private String nom;
 
-    @NotBlank(message = "Le prénom est obligatoire")
-    @Size(min = 2, max = 50, message = "Le prénom doit contenir entre 2 et 50 caractères")
-    private String prenom;
+    private String prenom; // Optionnel pour les entreprises
 
     @NotBlank(message = "L'email est obligatoire")
     @Email(message = "L'email doit être valide")
@@ -28,14 +25,15 @@ public class RegisterRequestDTO {
 
     private String adresse;
 
-    @NotBlank(message = "Le numéro de permis est obligatoire")
-    private String numeroPermis;
+    private String numeroPermis; // Optionnel pour les entreprises
+
+    private String customerType = "individual"; // "individual" ou "company"
 
     private Role role = Role.USER;
 
     public RegisterRequestDTO() {}
 
-    public RegisterRequestDTO(String nom, String prenom, String email, String password, String telephone, String adresse, String numeroPermis, Role role) {
+    public RegisterRequestDTO(String nom, String prenom, String email, String password, String telephone, String adresse, String numeroPermis, String customerType, Role role) {
         this.nom = nom;
         this.prenom = prenom;
         this.email = email;
@@ -43,6 +41,7 @@ public class RegisterRequestDTO {
         this.telephone = telephone;
         this.adresse = adresse;
         this.numeroPermis = numeroPermis;
+        this.customerType = customerType;
         this.role = role;
     }
 
@@ -70,4 +69,7 @@ public class RegisterRequestDTO {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public String getCustomerType() { return customerType; }
+    public void setCustomerType(String customerType) { this.customerType = customerType; }
 }

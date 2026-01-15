@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { FaStar, FaMapMarkerAlt, FaGasPump, FaCog, FaTachometerAlt, FaCalendar } from 'react-icons/fa'
 
-const VehicleCard = ({ vehicle, layout = 'grid' }) => {
+const VehicleCard = ({ vehicle, layout = 'grid', onAddToCart }) => {
   if (layout === 'list') {
     return (
       <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 border border-gray-100">
@@ -76,7 +76,10 @@ const VehicleCard = ({ vehicle, layout = 'grid' }) => {
                 >
                   Voir détails
                 </Link>
-                <button className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">
+                <button
+                  onClick={onAddToCart}
+                  className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600"
+                >
                   Ajouter au panier
                 </button>
               </div>
@@ -152,7 +155,10 @@ const VehicleCard = ({ vehicle, layout = 'grid' }) => {
           >
             Voir détails
           </Link>
-          <button className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg font-medium hover:bg-orange-600 transition-colors">
+          <button
+            onClick={onAddToCart}
+            className="flex-1 bg-orange-500 text-white py-2.5 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+          >
             Panier
           </button>
         </div>
