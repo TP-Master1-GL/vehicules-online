@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children, requireCompany = false }) => {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (requireCompany && user.customer_type !== 'company') {
+  if (requireCompany && user.customerType !== 'company' && user.customerType !== 'professional') {
     return <Navigate to="/" replace />
   }
 

@@ -15,6 +15,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 public class Societe extends Client {
+    @Column(nullable = false)
+    @org.hibernate.annotations.ColumnDefault("")
+    private String password;
+
     @Column(nullable = false, unique = true)
     private String siret;
 

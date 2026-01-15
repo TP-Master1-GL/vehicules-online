@@ -20,7 +20,7 @@ export const CompanyProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (user && ['company', 'subsidiary'].includes(user.customer_type)) {
+    if (user && ['company', 'professional'].includes(user.customerType)) {
       fetchCompanyData()
     }
   }, [user])

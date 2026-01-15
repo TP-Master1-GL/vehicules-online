@@ -91,7 +91,7 @@ const About = () => {
                 key={index} 
                 className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-gray-100"
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-600 to-blue-600 rounded-xl flex items-center justify-center mb-6">
                   <div className="text-white">
                     {feature.icon}
                   </div>

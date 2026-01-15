@@ -73,8 +73,13 @@ public class AuthenticationService {
             societe.setAdresse(request.getAdresse() != null && !request.getAdresse().trim().isEmpty()
                 ? request.getAdresse().trim()
                 : "Adresse non spécifiée");
-            societe.setRaisonSociale(request.getNom().trim() + " SARL"); // Valeur par défaut
-            societe.setSiret("12345678901234"); // Valeur par défaut, devrait être fourni par le frontend
+            societe.setPassword(passwordEncoder.encode(request.getPassword()));
+            societe.setRaisonSociale(request.getRaisonSociale() != null && !request.getRaisonSociale().trim().isEmpty()
+                ? request.getRaisonSociale().trim()
+                : request.getNom().trim() + " SARL"); // Valeur par défaut
+            societe.setSiret(request.getSiret() != null && !request.getSiret().trim().isEmpty()
+                ? request.getSiret().trim()
+                : "12345678901234"); // Valeur par défaut
             client = societe;
         } else {
             // Pour les particuliers, créer un ClientParticulier

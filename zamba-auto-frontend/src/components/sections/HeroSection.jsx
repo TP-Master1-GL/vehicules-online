@@ -21,7 +21,7 @@ const HeroSection = () => {
             <Link to="/catalog" className="btn-zamba-orange text-lg">
               Voir le catalogue
             </Link>
-            <Link to="/fleet" className="btn-zamba-blue text-lg">
+            <Link to="/achat-flotte" className="btn-zamba-blue text-lg">
               Achat flotte
             </Link>
           </div>

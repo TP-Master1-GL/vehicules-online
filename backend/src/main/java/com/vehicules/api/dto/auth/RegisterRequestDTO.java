@@ -27,7 +27,11 @@ public class RegisterRequestDTO {
 
     private String numeroPermis; // Optionnel pour les entreprises
 
-    private String customerType = "individual"; // "individual" ou "company"
+    private String customerType = "individual"; // "individual", "company", "professional"
+
+    private String raisonSociale; // Pour les entreprises
+
+    private String siret; // Pour les entreprises
 
     private Role role = Role.USER;
 
@@ -72,4 +76,10 @@ public class RegisterRequestDTO {
 
     public String getCustomerType() { return customerType; }
     public void setCustomerType(String customerType) { this.customerType = customerType; }
+
+    public String getRaisonSociale() { return raisonSociale; }
+    public void setRaisonSociale(String raisonSociale) { this.raisonSociale = raisonSociale; }
+
+    public String getSiret() { return siret; }
+    public void setSiret(String siret) { this.siret = siret; }
 }

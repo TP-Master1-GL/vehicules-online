@@ -17,13 +17,23 @@ const Register = () => {
     try {
       // Mapper les champs du formulaire vers les champs attendus par le backend
       const userData = {
-        nom: data.lastName, // lastName -> nom
-        prenom: data.firstName, // firstName -> prenom
-        email: data.email,
-        password: data.password,
-        telephone: data.phone, // phone -> telephone
-        numeroPermis: data.firstName + data.lastName + Math.random().toString(36).substring(2, 8).toUpperCase(), // Générer un numéro de permis temporaire
-        customer_type: accountType
+        customerType: accountType, // "individual", "company", "professional"
+      }
+
+      // Champs communs
+      userData.nom = data.lastName || data.companyName
+      userData.email = data.email
+      userData.password = data.password
+      userData.telephone = data.phone
+
+      // Champs spécifiques selon le type de compte
+      if (accountType === 'individual') {
+        userData.prenom = data.firstName
+        userData.numeroPermis = data.firstName + data.lastName + Math.random().toString(36).substring(2, 8).toUpperCase()
+      } else if (accountType === 'company' || accountType === 'professional') {
+        // Pour les entreprises, on peut ajouter des champs supplémentaires si nécessaire
+        userData.raisonSociale = data.companyName || data.lastName
+        userData.siret = data.taxNumber || '12345678901234' // Valeur par défaut
       }
 
       await registerUser(userData)

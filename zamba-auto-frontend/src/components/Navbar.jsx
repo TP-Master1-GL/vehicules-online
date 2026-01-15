@@ -35,10 +35,10 @@ const Navbar = () => {
               <Link to="/catalogue" className="text-gray-700 hover:text-orange-500 font-medium">
                 Catalogue
               </Link>
-              <Link to="/fleet" className="text-gray-700 hover:text-orange-500 font-medium">
+              <Link to="/achat-flotte" className="text-gray-700 hover:text-orange-500 font-medium">
                 Achat flotte
               </Link>
-              <Link to="/about" className="text-gray-700 hover:text-orange-500 font-medium">
+              <Link to="/a-propos" className="text-gray-700 hover:text-orange-500 font-medium">
                 À propos
               </Link>
               <Link to="/contact" className="text-gray-700 hover:text-orange-500 font-medium">
@@ -46,7 +46,7 @@ const Navbar = () => {
               </Link>
 
               {/* Cart */}
-              <Link to="/cart" className="relative">
+              <Link to="/panier" className="relative">
                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
@@ -60,8 +60,8 @@ const Navbar = () => {
               {/* User Menu */}
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <Link 
-                    to={user.customer_type === 'entreprise' ? '/dashboard-company' : '/dashboard-client'}
+                  <Link
+                    to={user.customerType === 'company' || user.customerType === 'professional' ? '/entreprise/dashboard' : '/panier'}
                     className="text-gray-700 hover:text-orange-500 font-medium"
                   >
                     Mon compte
@@ -103,20 +103,20 @@ const Navbar = () => {
                 <Link to="/catalogue" className="text-gray-700 hover:text-orange-500 font-medium">
                   Catalogue
                 </Link>
-                <Link to="/fleet" className="text-gray-700 hover:text-orange-500 font-medium">
+                <Link to="/achat-flotte" className="text-gray-700 hover:text-orange-500 font-medium">
                   Achat flotte
                 </Link>
-                <Link to="/about" className="text-gray-700 hover:text-orange-500 font-medium">
+                <Link to="/a-propos" className="text-gray-700 hover:text-orange-500 font-medium">
                   À propos
                 </Link>
                 <Link to="/contact" className="text-gray-700 hover:text-orange-500 font-medium">
                   Contact
                 </Link>
-                
+
                 {user ? (
                   <>
-                    <Link 
-                      to={user.customer_type === 'entreprise' ? '/dashboard-company' : '/dashboard-client'}
+                    <Link
+                      to={user.customerType === 'company' || user.customerType === 'professional' ? '/entreprise/dashboard' : '/panier'}
                       className="text-gray-700 hover:text-orange-500 font-medium"
                     >
                       Mon compte

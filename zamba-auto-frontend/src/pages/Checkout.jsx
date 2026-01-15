@@ -608,7 +608,7 @@ const Checkout = () => {
                     }).format(calculateTaxes())}</span>
                   </div>
                   
-                  {user?.customer_type === 'company' && (
+                  {user?.customerType === 'company' && (
                     <div className="flex justify-between text-green-600">
                       <span>Réduction flotte (-15%)</span>
                       <span>-{new Intl.NumberFormat('fr-FR', {
@@ -642,8 +642,8 @@ const Checkout = () => {
                     <div className="flex items-center gap-2">
                       <FaBuilding className="w-4 h-4 text-primary-gray" />
                       <span>
-                        {user?.customer_type === 'individual' ? 'Particulier' :
-                         user?.customer_type === 'company' ? 'Entreprise' : 'Filiale'}
+                        {user?.customerType === 'individual' ? 'Particulier' :
+                         user?.customerType === 'company' ? 'Entreprise' : 'Filiale'}
                       </span>
                     </div>
                   </div>

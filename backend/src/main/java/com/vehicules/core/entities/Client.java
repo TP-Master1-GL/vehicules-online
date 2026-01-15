@@ -72,9 +72,20 @@ public abstract class Client {
         return Role.USER; // ou définir un rôle par défaut pour les sociétés
     }
 
+    public String getPassword() {
+        if (this instanceof ClientParticulier) {
+            return ((ClientParticulier) this).getPassword();
+        } else if (this instanceof Societe) {
+            return ((Societe) this).getPassword();
+        }
+        return ""; // mot de passe par défaut si aucun type
+    }
+
     public void setPassword(String password) {
         if (this instanceof ClientParticulier) {
             ((ClientParticulier) this).setPassword(password);
+        } else if (this instanceof Societe) {
+            ((Societe) this).setPassword(password);
         }
     }
 

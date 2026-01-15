@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
         email: response.user?.email || response.email,
         nom: response.user?.nom || response.nom,
         prenom: response.user?.prenom || response.prenom,
-        customer_type: response.user?.type || response.customer_type || 'individual',
+        customerType: response.user?.customerType || response.customerType || 'individual',
         role: response.user?.role || response.role,
         company_id: response.company_id,
         telephone: response.user?.telephone || response.telephone

@@ -108,7 +108,7 @@ const Header = () => {
                     >
                       Mes Documents
                     </Link>
-                    {user?.customer_type === 'company' && (
+                    {user?.customerType === 'company' && (
                       <Link
                         to="/entreprise/dashboard"
                         className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
@@ -185,7 +185,7 @@ const Header = () => {
                   >
                     Mes Documents
                   </Link>
-                  {user?.customer_type === 'company' && (
+                  {user?.customerType === 'company' && (
                     <Link
                       to="/entreprise/dashboard"
                       className="block px-4 py-3 text-blue-900 hover:bg-gray-50"

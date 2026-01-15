@@ -252,8 +252,8 @@ const Cart = () => {
                     <div>
                       <p className="text-sm text-primary-gray mb-1">Type de compte</p>
                       <p className="font-medium">
-                        {user?.customer_type === 'individual' ? 'Particulier' :
-                         user?.customer_type === 'company' ? 'Entreprise' : 'Filiale'}
+                        {user?.customerType === 'individual' ? 'Particulier' :
+                         user?.customerType === 'company' ? 'Entreprise' : 'Filiale'}
                       </p>
                     </div>
                     <div>
@@ -362,7 +362,7 @@ const Cart = () => {
               </div>
               
               {/* Fleet Discount */}
-              {user?.customer_type === 'company' && (
+              {user?.customerType === 'company' && (
                 <div className="card mt-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                   <div className="p-6">
                     <h3 className="text-xl font-bold mb-2">Réduction flotte</h3>
