@@ -21,7 +21,7 @@ public class CommandeComptantCreator extends CommandeCreator {
         if (commande instanceof CommandeComptant) {
             CommandeComptant cmdComptant = (CommandeComptant) commande;
             
-            // Spécificités "comptant" selon l'énoncé
+            // Spécificités "comptant" 
             cmdComptant.setTypePaiement("COMPTANT");
             cmdComptant.setEstPaye(false); // Pas encore payé
             
@@ -44,7 +44,7 @@ public class CommandeComptantCreator extends CommandeCreator {
         CommandeComptant commande = (CommandeComptant) 
             creerCommandeAvecVehicule(vehicule);
         
-        // Calcul remise selon projet
+        // Calcul remise 
         Double montantBase = vehicule.getPrix();
         commande.setMontant(montantBase);
         commande.setRemise(pourcentageRemise != null ? pourcentageRemise : 0.0);

@@ -2,27 +2,19 @@ package com.vehicules.patterns.factory;
 
 import com.vehicules.entities.Commande;
 
-/**
- * Façade pour utiliser facilement les fabriques
- * Conforme à l'ÉNONCÉ qui demande une façon simple de créer
- */
 public class CommandeFactory {
     
-    // Constantes selon l'énoncé
     public static final String TYPE_COMPTANT = "COMPTANT";
     public static final String TYPE_CREDIT = "CREDIT";
     
-    /**
-     * Méthode principale selon l'ÉNONCÉ
-     * Utilise INTERNAMENT le pattern du COURS
-     */
+    
     public static Commande createCommande(String type) {
         // Validation
         if (type == null) {
             throw new IllegalArgumentException("Type de commande requis");
         }
         
-        // Utilisation du pattern Factory Method du COURS
+        // Utilisation du pattern Factory Method 
         CommandeCreator creator = null;
         
         switch (type.toUpperCase()) {
@@ -45,7 +37,7 @@ public class CommandeFactory {
     }
     
     /**
-     * Variante avec véhicule (selon l'énoncé)
+     * Variante avec véhicule 
      */
     public static Commande createCommandePourVehicule(
             String type, com.vehicules.entities.Vehicule vehicule) {
@@ -58,7 +50,7 @@ public class CommandeFactory {
     }
     
     /**
-     * Pour commandes avec crédit détaillé (énoncé)
+     * Pour commandes avec crédit détaillé 
      */
     public static Commande createCommandeCredit(
             com.vehicules.entities.Vehicule vehicule,
@@ -69,7 +61,7 @@ public class CommandeFactory {
     }
     
     /**
-     * Pour commandes comptant avec remise (énoncé)
+     * Pour commandes comptant avec remise 
      */
     public static Commande createCommandeComptantAvecRemise(
             com.vehicules.entities.Vehicule vehicule,
