@@ -1,3 +1,4 @@
+// src/main/java/com/vehicules/api/mappers/CommandeMapper.java
 package com.vehicules.api.mappers;
 
 import com.vehicules.api.dto.CommandeDTO;
@@ -29,7 +30,15 @@ public class CommandeMapper {
         dto.setDateCreation(commande.getDateCreation());
         dto.setStatut(commande.getStatut());
         dto.setMontantTotal(commande.getMontantTotal());
-        dto.setTypePaiement(commande.getTypePaiement());
+        
+        // Utiliser getTypePaiement() qui est abstrait dans Commande
+        if (commande instanceof com.vehicules.core.entities.CommandeComptant) {
+            dto.setTypePaiement("COMPTANT");
+        } else if (commande instanceof com.vehicules.core.entities.CommandeCredit) {
+            dto.setTypePaiement("CREDIT");
+        } else {
+            dto.setTypePaiement("INCONNU");
+        }
         
         if (commande.getClient() != null) {
             dto.setClient(clientMapper.toDTO(commande.getClient()));

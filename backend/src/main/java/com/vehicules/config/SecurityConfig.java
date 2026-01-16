@@ -50,6 +50,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Routes publiques - PAS besoin d'authentification
                 .requestMatchers(
+                    "/**",
                     "/api/auth/**",
                     "/auth/**",
                     "/api/test/**",

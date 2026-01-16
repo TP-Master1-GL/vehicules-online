@@ -3,22 +3,24 @@ package com.vehicules.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        // Configuration CORS pour tous les endpoints de l'API
         String[] allowedOrigins = {
-            "http://localhost:3000", // React dev server
-            "http://localhost:5173", // Vite dev server
-            "http://localhost:8080", // Pour les appels directs
-            "http://localhost:8081"  // Au cas où
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8080",
+            "http://localhost:8081"
         };
 
-        // Routes principales de l'application
         String[] apiPatterns = {
             "/auth/**",
             "/catalogue/**",
@@ -34,13 +36,37 @@ public class WebConfig implements WebMvcConfigurer {
 
         for (String pattern : apiPatterns) {
             registry.addMapping(pattern)
-                    .allowedOrigins((String[]) java.util.Arrays.stream(allowedOrigins)
-                        .filter(origin -> origin != null)
-                        .toArray(String[]::new))
+                    .allowedOrigins(allowedOrigins)
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                     .allowedHeaders("*")
                     .allowCredentials(true)
                     .maxAge(3600);
         }
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Configuration pour servir les fichiers uploadés
+        exposeDirectory("uploads", registry);
+        
+        // Configuration pour les ressources statiques
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("classpath:/static/images/");
+    }
+    
+    private void exposeDirectory(String dirName, ResourceHandlerRegistry registry) {
+        Path uploadDir = Paths.get(dirName);
+        String uploadPath = uploadDir.toFile().getAbsolutePath();
+        
+        if (dirName.startsWith("../")) {
+            dirName = dirName.replace("../", "");
+        }
+        
+        registry.addResourceHandler("/" + dirName + "/**")
+                .addResourceLocations("file:" + uploadPath + "/")
+                .setCachePeriod(3600)
+                .resourceChain(true);
     }
 }

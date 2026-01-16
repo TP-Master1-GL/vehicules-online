@@ -2,6 +2,7 @@
 package com.vehicules.patterns.template;
 
 import com.vehicules.core.entities.Commande;
+import com.vehicules.core.entities.LigneCommande;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,10 +16,15 @@ public class CalculCommandeFR extends CalculCommandeTemplate {
     @Override
     protected double appliquerTaxes(double sousTotal, Commande commande) {
         // Vérifier si un véhicule est électrique pour TVA réduite
-        boolean vehiculeElectrique = commande.getLignes().stream()
-            .anyMatch(ligne -> 
-                ligne.getVehicule() != null && 
-                "ELECTRIQUE".equalsIgnoreCase(ligne.getVehicule().getTypeEnergie()));
+        boolean vehiculeElectrique = false;
+        if (commande.getLignes() != null) {
+            for (LigneCommande ligne : commande.getLignes()) {
+                if (ligne.getVehicule() != null && "ELECTRIQUE".equalsIgnoreCase(ligne.getVehicule().getEnergie())) {
+                    vehiculeElectrique = true;
+                    break;
+                }
+            }
+        }
         
         double tauxTVA = vehiculeElectrique ? TVA_REDUITE : TVA_STANDARD;
         return sousTotal * (1 + tauxTVA);
@@ -26,7 +32,7 @@ public class CalculCommandeFR extends CalculCommandeTemplate {
     
     @Override
     protected double appliquerRemises(double total, Commande commande) {
-        // Remise de 5% si commande > 20000€ (calculée sur le sous-total)
+        // Remise de 5% si commande > 20000€
         double sousTotal = calculeSousTotal(commande);
         if (sousTotal > SEUIL_REMISE) {
             return total * (1 - TAUX_REMISE);
@@ -38,6 +44,5 @@ public class CalculCommandeFR extends CalculCommandeTemplate {
     protected double calculeTotalLivraison(double total, Commande commande) {
         // Frais de livraison fixes pour la France
         return total + FRAIS_LIVRAISON_FR;
-
-}
+    }
 }

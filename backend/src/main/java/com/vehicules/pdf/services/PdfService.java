@@ -1,3 +1,4 @@
+// src/main/java/com/vehicules/pdf/services/PdfService.java
 package com.vehicules.pdf.services;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -6,8 +7,7 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.UnitValue;
-import com.vehicules.core.entities.Commande;
-import com.vehicules.core.entities.Vehicule;
+import com.vehicules.core.entities.*;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -29,6 +29,10 @@ public class PdfService {
             .setBold()
             .setFontSize(16));
         
+        // Informations commande
+        document.add(new Paragraph("Commande N°: " + commande.getId()));
+        document.add(new Paragraph("Date: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date())));
+        
         // Informations véhicule
         document.add(new Paragraph("\nInformations du véhicule:")
             .setBold());
@@ -46,22 +50,27 @@ public class PdfService {
         document.add(tableVehicule);
         
         // Informations client
-        document.add(new Paragraph("\nInformations du client:")
-            .setBold());
+        if (commande.getClient() != null) {
+            document.add(new Paragraph("\nInformations du client:")
+                .setBold());
+            
+            Table tableClient = new Table(UnitValue.createPercentArray(2)).useAllAvailableWidth();
+            tableClient.addCell("Nom");
+            tableClient.addCell(commande.getClient().getNom());
+            tableClient.addCell("Type");
+            tableClient.addCell(commande.getClient().getType());
+            
+            if (commande.getClient() instanceof Societe) {
+                Societe societe = (Societe) commande.getClient();
+                tableClient.addCell("Raison sociale");
+                tableClient.addCell(societe.getRaisonSociale());
+                tableClient.addCell("SIRET");
+                tableClient.addCell(societe.getSiret());
+            }
+            
+            document.add(tableClient);
+        }
         
-        Table tableClient = new Table(UnitValue.createPercentArray(2)).useAllAvailableWidth();
-        tableClient.addCell("Nom");
-        tableClient.addCell(commande.getClient().getNom());
-        tableClient.addCell("Email");
-        tableClient.addCell(commande.getClient().getEmail());
-        tableClient.addCell("Téléphone");
-        tableClient.addCell(commande.getClient().getTelephone());
-        
-        document.add(tableClient);
-        
-        // Date et signature
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        document.add(new Paragraph("\n\nFait le: " + sdf.format(new Date())));
         document.add(new Paragraph("\n\nSignature: ___________________"));
         
         document.close();
@@ -84,20 +93,24 @@ public class PdfService {
         document.add(new Paragraph("\nDÉSIGNATION DU VÉHICULE:")
             .setBold());
         
-        Paragraph details = new Paragraph()
-            .add("\nMarque: " + vehicule.getMarque())
-            .add("\nModèle: " + vehicule.getModele())
-            .add("\nType: " + vehicule.getType())
-            .add("\nPrix: " + vehicule.getPrixBase() + " €");
+        // Informations véhicule
+        document.add(new Paragraph("Marque: " + vehicule.getMarque()));
+        document.add(new Paragraph("Modèle: " + vehicule.getModele()));
+        document.add(new Paragraph("Type: " + vehicule.getType()));
         
-        document.add(details);
-        
-        document.add(new Paragraph("\nÀ: ")
-            .add(commande.getClient().getNom())
-            .add("\n" + commande.getClient().getEmail()));
+        // Informations client
+        if (commande.getClient() != null) {
+            document.add(new Paragraph("\nÀ: " + commande.getClient().getNom()));
+            
+            if (commande.getClient() instanceof Societe) {
+                Societe societe = (Societe) commande.getClient();
+                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
+                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+            }
+        }
         
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        document.add(new Paragraph("\n\nLe " + sdf.format(commande.getDateCreation())));
+        document.add(new Paragraph("\n\nLe " + sdf.format(new Date())));
         
         document.add(new Paragraph("\n\nCachet et signature du cédant:"));
         document.add(new Paragraph("\n___________________"));
@@ -120,32 +133,43 @@ public class PdfService {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
         document.add(new Paragraph("Date: " + sdf.format(commande.getDateCreation())));
         
+        // Informations client
+        if (commande.getClient() != null) {
+            document.add(new Paragraph("\nCLIENT:"));
+            document.add(new Paragraph("Nom: " + commande.getClient().getNom()));
+            document.add(new Paragraph("Type: " + commande.getClient().getType()));
+            
+            if (commande.getClient() instanceof Societe) {
+                Societe societe = (Societe) commande.getClient();
+                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
+                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+            }
+        }
+        
         // Détails commande
-        document.add(new Paragraph("\nDÉTAILS DE LA COMMANDE:")
-            .setBold());
-        
-        Table table = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2})).useAllAvailableWidth();
-        table.addHeaderCell("Désignation");
-        table.addHeaderCell("Quantité");
-        table.addHeaderCell("Prix Unitaire");
-        
-        commande.getLignes().forEach(ligne -> {
-            table.addCell(ligne.getVehicule().getMarque() + " " + ligne.getVehicule().getModele());
-            table.addCell("1");
-            table.addCell(ligne.getPrixTotal() + " €");
-        });
-        
-        document.add(table);
+        if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
+            document.add(new Paragraph("\nDÉTAILS DE LA COMMANDE:")
+                .setBold());
+            
+            Table table = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2})).useAllAvailableWidth();
+            table.addHeaderCell("Désignation");
+            table.addHeaderCell("Quantité");
+            table.addHeaderCell("Prix Unitaire");
+            
+            for (LigneCommande ligne : commande.getLignes()) {
+                table.addCell(ligne.getVehicule().getMarque() + " " + ligne.getVehicule().getModele());
+                table.addCell(String.valueOf(ligne.getQuantite()));
+                table.addCell(ligne.getPrixUnitaire() + " €");
+            }
+            
+            document.add(table);
+        }
         
         // Total
-        document.add(new Paragraph("\n\nTOTAL: " + commande.getMontantTotal() + " €")
+        document.add(new Paragraph("\n\nTOTAL: " + 
+            (commande.getMontantTotal() != null ? commande.getMontantTotal() + " €" : "0 €"))
             .setBold()
             .setFontSize(14));
-        
-        // Mode de paiement
-        String modePaiement = commande instanceof com.vehicules.core.entities.CommandeComptant ? 
-            "Comptant" : "Crédit";
-        document.add(new Paragraph("Mode de paiement: " + modePaiement));
         
         document.add(new Paragraph("\n\nSignature du client:"));
         document.add(new Paragraph("\n___________________"));
@@ -154,20 +178,54 @@ public class PdfService {
         return baos.toByteArray();
     }
     
-    public byte[] genererCataloguePdf() throws IOException {
+    public byte[] genererFacture(Commande commande) throws IOException {
+        return genererBonCommande(commande); // Pour l'instant, même contenu
+    }
+    
+    public byte[] genererContratCredit(CommandeCredit commande) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(baos);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
         
-        document.add(new Paragraph("CATALOGUE VÉHICULES")
+        document.add(new Paragraph("CONTRAT DE CRÉDIT")
             .setBold()
-            .setFontSize(20)
-            .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+            .setFontSize(16));
         
-        document.add(new Paragraph("Date d'édition: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date()))
-            .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
-
+        document.add(new Paragraph("\nContrat N°: " + commande.getId()));
+        document.add(new Paragraph("Date: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date())));
+        
+        // Informations crédit
+        if (commande.getFinancement() != null) {
+            document.add(new Paragraph("\nDÉTAILS DU FINANCEMENT:")
+                .setBold());
+            
+            document.add(new Paragraph("Montant financé: " + commande.getMontantTotal() + " €"));
+            document.add(new Paragraph("Durée: " + ((CommandeCredit) commande).getDureeMois() + " mois"));
+            document.add(new Paragraph("Taux: " + ((CommandeCredit) commande).getTauxInteret() + " %"));
+            document.add(new Paragraph("Mensualité: " + ((CommandeCredit) commande).getTauxInteret() + " €"));
+        }
+        
+        // Informations client
+        if (commande.getClient() != null) {
+            document.add(new Paragraph("\nINFORMATIONS EMPRUNTEUR:")
+                .setBold());
+            
+            document.add(new Paragraph("Nom: " + commande.getClient().getNom()));
+            
+            if (commande.getClient() instanceof Societe) {
+                Societe societe = (Societe) commande.getClient();
+                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
+                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+            }
+        }
+        
+        document.add(new Paragraph("\n\nSignature de l'emprunteur:"));
+        document.add(new Paragraph("\n___________________"));
+        
+        document.add(new Paragraph("\n\nSignature du prêteur:"));
+        document.add(new Paragraph("\n___________________"));
+        
         document.close();
         return baos.toByteArray();
     }

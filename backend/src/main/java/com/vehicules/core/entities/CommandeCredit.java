@@ -1,40 +1,45 @@
 package com.vehicules.core.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "commande_credit")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@AllArgsConstructor
 public class CommandeCredit extends Commande {
-    @Column(nullable = false)
-    private Integer dureeMois; // durée du crédit en mois
-
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal tauxInteret; // taux d'intérêt annuel
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal mensualite;
-
-    @Column
+    
+    @Column(name = "taux_interet", precision = 5, scale = 2)
+    private BigDecimal tauxInteret;
+    
+    @Column(name = "duree_mois")
+    private Integer dureeMois;
+    
+    @Column(name = "organisme_credit")
     private String organismeCredit;
-
-    @Column
-    private LocalDateTime dateApprobation;
-
+    
     @Override
     public String getTypePaiement() {
         return "CREDIT";
+    }
+    
+    // Getters et setters basiques (au cas où Lombok ne fonctionne pas)
+    public BigDecimal getTauxInteret() { return tauxInteret; }
+    public void setTauxInteret(BigDecimal tauxInteret) { this.tauxInteret = tauxInteret; }
+    
+    public Integer getDureeMois() { return dureeMois; }
+    public void setDureeMois(Integer dureeMois) { this.dureeMois = dureeMois; }
+    
+    public String getOrganismeCredit() { return organismeCredit; }
+    public void setOrganismeCredit(String organismeCredit) { this.organismeCredit = organismeCredit; }
+    
+    // Méthode pour compatibilité avec PdfService
+    public BigDecimal getFinancement() {
+        return this.getMontantTotal() != null ? this.getMontantTotal() : BigDecimal.ZERO;
     }
 }

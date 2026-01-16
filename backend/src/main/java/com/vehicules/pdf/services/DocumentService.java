@@ -1,3 +1,4 @@
+// src/main/java/com/vehicules/pdf/services/DocumentService.java
 package com.vehicules.pdf.services;
 
 import com.vehicules.core.entities.Commande;
@@ -19,6 +20,9 @@ public class DocumentService {
     
     @Autowired
     private DocumentRepository documentRepository;
+    
+    @Autowired
+    private LiasseViergeService liasseViergeService;
     
     public List<byte[]> generateAllDocuments(Commande commande) throws IOException {
         List<byte[]> documents = new ArrayList<>();
@@ -42,8 +46,6 @@ public class DocumentService {
             doc.setFormat("PDF");
             doc.setCommande(commande);
 
-            // Dans une vraie application, vous stockeriez le PDF dans le système de fichiers
-            // et sauvegarderiez le chemin
             savedDocuments.add(documentRepository.save(doc));
         }
         
@@ -51,7 +53,30 @@ public class DocumentService {
     }
     
     public byte[] generateDocumentByType(Commande commande, String documentType) throws IOException {
+        // Vérifier si on veut un document vierge
+        if (documentType.toUpperCase().endsWith("_VIERGE")) {
+            String baseType = documentType.replace("_VIERGE", "");
+            return liasseViergeService.generateDocumentVierge(baseType);
+        }
+        
         TypeDocument type = TypeDocument.valueOf(documentType.toUpperCase());
         return pdfGenerationService.generateDocument(commande, type);
+    }
+    
+    // Nouvelle méthode pour générer une liasse mixte (vierge + remplie)
+    public List<byte[]> generateLiasseMixte(Commande commande) throws IOException {
+        List<byte[]> documents = new ArrayList<>();
+        
+        // Ajouter les documents vierges
+        documents.add(liasseViergeService.generateDocumentVierge("DEMANDE_IMMATRICULATION"));
+        documents.add(liasseViergeService.generateDocumentVierge("CERTIFICAT_CESSION"));
+        documents.add(liasseViergeService.generateDocumentVierge("BON_COMMANDE"));
+        
+        // Ajouter les documents remplis
+        documents.add(pdfGenerationService.generateDocument(commande, TypeDocument.IMMATRICULATION));
+        documents.add(pdfGenerationService.generateDocument(commande, TypeDocument.CESSION));
+        documents.add(pdfGenerationService.generateDocument(commande, TypeDocument.BON_COMMANDE));
+        
+        return documents;
     }
 }

@@ -29,7 +29,12 @@ public abstract class CalculCommandeTemplate {
             return 0.0;
         }
         return commande.getLignes().stream()
-            .mapToDouble(ligne -> ligne.getVehicule().getPrix().doubleValue() * ligne.getQuantite())
+            .mapToDouble(ligne -> {
+                if (ligne.getVehicule() != null && ligne.getVehicule().getPrixBase() != null) {
+                    return ligne.getVehicule().getPrixBase().doubleValue() * ligne.getQuantite();
+                }
+                return 0.0;
+            })
             .sum();
     }
     
@@ -37,5 +42,4 @@ public abstract class CalculCommandeTemplate {
     protected abstract double appliquerTaxes(double sousTotal, Commande commande);
     protected abstract double appliquerRemises(double total, Commande commande);
     protected abstract double calculeTotalLivraison(double total, Commande commande);
-
 }

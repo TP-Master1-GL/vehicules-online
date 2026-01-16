@@ -8,18 +8,19 @@ import {
   FaLock, FaCalendar, FaUser, FaBuilding, FaMapMarkerAlt 
 } from 'react-icons/fa'
 import orderService from '../api/orders'
+import cartService from '../api/cart'
 import toast from 'react-hot-toast'
 
 const Checkout = () => {
   const [step, setStep] = useState(1)
   const [paymentMethod, setPaymentMethod] = useState('cash')
-  const [deliveryCountry, setDeliveryCountry] = useState('CM')
+  const [deliveryCountry, setDeliveryCountry] = useState('FR')
   const [isProcessing, setIsProcessing] = useState(false)
   const { cart, total, clearCart } = useCart()
-  const { user } = useAuth()
+  const { user, clientId } = useAuth()
   const navigate = useNavigate()
   
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, watch } = useForm()
 
   const steps = [
     { number: 1, title: 'Livraison', icon: <FaTruck /> },
@@ -28,11 +29,11 @@ const Checkout = () => {
   ]
 
   const countries = [
-    { code: 'CM', name: 'Cameroun', tax: 20 },
     { code: 'FR', name: 'France', tax: 20 },
     { code: 'BE', name: 'Belgique', tax: 21 },
+    { code: 'LU', name: 'Luxembourg', tax: 17 },
     { code: 'CH', name: 'Suisse', tax: 7.7 },
-    { code: 'SN', name: 'Sénégal', tax: 18 }
+    { code: 'DE', name: 'Allemagne', tax: 19 }
   ]
 
   const paymentMethods = [
@@ -40,19 +41,19 @@ const Checkout = () => {
       id: 'cash',
       title: 'Paiement comptant',
       description: 'Virement bancaire ou espèces',
-      icon: <FaCreditCard />
+      backendType: 'COMPTANT'
     },
     {
       id: 'credit',
       title: 'Demande de crédit',
       description: 'Financement sur 12-60 mois',
-      icon: <FaFileInvoice />
+      backendType: 'CREDIT'
     },
     {
       id: 'lease',
       title: 'Location longue durée',
       description: 'LLD pour entreprises',
-      icon: <FaCalendar />
+      backendType: 'LOCATION'
     }
   ]
 
@@ -74,28 +75,76 @@ const Checkout = () => {
     try {
       setIsProcessing(true)
 
-      // Adapter le format pour le backend
+      // Trouver la méthode de paiement sélectionnée
+      const selectedPayment = paymentMethods.find(m => m.id === paymentMethod)
+      
+      // Préparer les données pour le backend
       const orderData = {
-        clientId: user?.id,
-        typePaiement: paymentMethod === 'cash' ? 'COMPTANT' : paymentMethod === 'credit' ? 'CREDIT' : 'LOCATION',
-        vehiculeIds: cart.map(item => item.vehicle.id) // Le backend attend vehiculeIds
+        clientId: clientId || user?.id,
+        typePaiement: selectedPayment?.backendType || 'COMPTANT',
+        paysLivraison: deliveryCountry,
+        vehiculeIds: cart.map(item => item.vehicle?.id || item.vehicleId),
+        // Format avancé avec lignes détaillées
+        lignes: cart.map(item => ({
+          vehiculeId: item.vehicle?.id || item.vehicleId,
+          quantite: item.quantity || 1,
+          optionIds: item.options?.map(opt => opt.id) || item.selectedOptions?.map(opt => opt.id) || []
+        }))
       }
 
-      // Utiliser le vrai service API
+      console.log('Envoi de la commande au backend:', orderData)
+
+      // Utiliser le service API adapté
       const createdOrder = await orderService.createOrder(orderData)
 
       toast.success('Commande créée avec succès !')
+      
+      // Vider le panier du backend
+      if (clientId) {
+        try {
+          await cartService.clearCart(clientId)
+        } catch (error) {
+          console.warn('Erreur lors de la suppression du panier:', error)
+        }
+      }
+      
+      // Vider le panier local
       clearCart()
       setStep(3)
 
       // Sauvegarder l'ID de commande pour la confirmation
-      localStorage.setItem('lastOrderId', createdOrder.id)
+      const orderId = createdOrder.id || createdOrder.orderId
+      localStorage.setItem('lastOrderId', orderId)
+      
+      // Sauvegarder les détails de commande
+      localStorage.setItem('lastOrderDetails', JSON.stringify({
+        orderId: orderId,
+        orderNumber: createdOrder.orderNumber || `CMD-${new Date().getFullYear()}-${String(orderId).padStart(5, '0')}`,
+        date: new Date().toISOString(),
+        total: calculateTotal(),
+        status: 'EN_COURS'
+      }))
 
     } catch (error) {
-      console.error('Erreur lors de la création de commande:', error)
+      console.error('Erreur détaillée lors de la création de commande:', error)
       toast.error(error.message || 'Erreur lors de la création de la commande')
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  const getOrderSummary = () => {
+    const savedOrder = localStorage.getItem('lastOrderDetails')
+    if (savedOrder) {
+      return JSON.parse(savedOrder)
+    }
+    
+    // Fallback si pas de commande sauvegardée
+    return {
+      orderNumber: `CMD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(5, '0')}`,
+      date: new Date().toLocaleDateString('fr-FR'),
+      total: calculateTotal(),
+      status: 'EN_COURS'
     }
   }
 
@@ -199,6 +248,9 @@ const Checkout = () => {
                         className="form-input"
                         defaultValue={user?.name?.split(' ')[0]}
                       />
+                      {errors.firstName && (
+                        <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -211,6 +263,9 @@ const Checkout = () => {
                         className="form-input"
                         defaultValue={user?.name?.split(' ')[1]}
                       />
+                      {errors.lastName && (
+                        <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -219,10 +274,20 @@ const Checkout = () => {
                       </label>
                       <input
                         type="tel"
-                        {...register("phone", { required: "Le téléphone est requis" })}
+                        {...register("phone", { 
+                          required: "Le téléphone est requis",
+                          pattern: {
+                            value: /^[+]?[0-9\s\-\(\)]{10,}$/,
+                            message: "Numéro de téléphone invalide"
+                          }
+                        })}
                         className="form-input"
-                        placeholder="+237 6 XX XX XX XX"
+                        placeholder="+33 1 23 45 67 89"
+                        defaultValue={user?.phone}
                       />
+                      {errors.phone && (
+                        <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -241,6 +306,9 @@ const Checkout = () => {
                         className="form-input"
                         defaultValue={user?.email}
                       />
+                      {errors.email && (
+                        <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                      )}
                     </div>
                     
                     <div className="md:col-span-2">
@@ -251,8 +319,11 @@ const Checkout = () => {
                         type="text"
                         {...register("address", { required: "L'adresse est requise" })}
                         className="form-input"
-                        placeholder="123 Avenue des Champs"
+                        placeholder="123 Avenue des Champs-Élysées"
                       />
+                      {errors.address && (
+                        <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -263,8 +334,11 @@ const Checkout = () => {
                         type="text"
                         {...register("city", { required: "La ville est requise" })}
                         className="form-input"
-                        placeholder="Douala"
+                        placeholder="Paris"
                       />
+                      {errors.city && (
+                        <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -273,10 +347,19 @@ const Checkout = () => {
                       </label>
                       <input
                         type="text"
-                        {...register("zipCode", { required: "Le code postal est requis" })}
+                        {...register("zipCode", { 
+                          required: "Le code postal est requis",
+                          pattern: {
+                            value: /^[0-9]{5}$/,
+                            message: "Code postal invalide (5 chiffres requis)"
+                          }
+                        })}
                         className="form-input"
-                        placeholder="00237"
+                        placeholder="75008"
                       />
+                      {errors.zipCode && (
+                        <p className="mt-1 text-sm text-red-600">{errors.zipCode.message}</p>
+                      )}
                     </div>
                   </div>
 
@@ -284,7 +367,7 @@ const Checkout = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Options de livraison</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className={`p-4 border-2 rounded-lg cursor-pointer ${deliveryCountry === 'CM' ? 'border-primary-orange bg-orange-50' : 'border-gray-200'}`}>
+                      <div className={`p-4 border-2 rounded-lg cursor-pointer ${deliveryCountry === 'FR' ? 'border-primary-orange bg-orange-50' : 'border-gray-200'}`}>
                         <div className="flex items-center justify-between mb-2">
                           <span className="font-medium">Livraison standard</span>
                           <span className="font-bold">Gratuite</span>
@@ -353,7 +436,9 @@ const Checkout = () => {
                               ? 'bg-primary-orange text-white'
                               : 'bg-gray-100 text-gray-400'
                           }`}>
-                            {method.icon}
+                            {method.id === 'cash' && <FaCreditCard />}
+                            {method.id === 'credit' && <FaFileInvoice />}
+                            {method.id === 'lease' && <FaCalendar />}
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
@@ -381,21 +466,23 @@ const Checkout = () => {
                                       Durée (mois)
                                     </label>
                                     <select className="form-select">
-                                      <option>12 mois</option>
-                                      <option>24 mois</option>
-                                      <option>36 mois</option>
-                                      <option>48 mois</option>
-                                      <option>60 mois</option>
+                                      <option value="12">12 mois</option>
+                                      <option value="24">24 mois</option>
+                                      <option value="36">36 mois</option>
+                                      <option value="48">48 mois</option>
+                                      <option value="60">60 mois</option>
                                     </select>
                                   </div>
                                   <div>
                                     <label className="block text-sm font-medium text-primary-gray mb-2">
-                                      Apport initial
+                                      Apport initial (%)
                                     </label>
                                     <input
                                       type="number"
                                       className="form-input"
-                                      placeholder="30% minimum"
+                                      placeholder="30"
+                                      min="10"
+                                      max="80"
                                     />
                                   </div>
                                 </div>
@@ -463,7 +550,7 @@ const Checkout = () => {
                     </div>
                     <h3 className="text-2xl font-bold mb-4">Merci pour votre commande !</h3>
                     <p className="text-primary-gray max-w-2xl mx-auto">
-                      Votre commande a été enregistrée sous la référence <strong>CMD-2024-00123</strong>.
+                      Votre commande a été enregistrée sous la référence <strong>{getOrderSummary().orderNumber}</strong>.
                       Vous recevrez un email de confirmation sous peu avec tous les détails.
                     </p>
                   </div>
@@ -474,11 +561,11 @@ const Checkout = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-primary-gray">Numéro de commande</span>
-                        <span className="font-medium">CMD-2024-00123</span>
+                        <span className="font-medium">{getOrderSummary().orderNumber}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-primary-gray">Date</span>
-                        <span className="font-medium">{new Date().toLocaleDateString('fr-FR')}</span>
+                        <span className="font-medium">{getOrderSummary().date}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-primary-gray">Total</span>
@@ -486,12 +573,17 @@ const Checkout = () => {
                           {new Intl.NumberFormat('fr-FR', {
                             style: 'currency',
                             currency: 'EUR'
-                          }).format(calculateTotal())}
+                          }).format(getOrderSummary().total)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-primary-gray">Statut</span>
-                        <span className="font-medium text-green-600">Confirmée</span>
+                        <span className="font-medium text-green-600">
+                          {getOrderSummary().status === 'EN_COURS' ? 'En cours' : 
+                           getOrderSummary().status === 'VALIDEE' ? 'Validée' :
+                           getOrderSummary().status === 'PAYEE' ? 'Payée' :
+                           getOrderSummary().status === 'LIVREE' ? 'Livrée' : 'Annulée'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -561,25 +653,32 @@ const Checkout = () => {
                 <div className="mb-6">
                   <h3 className="font-bold mb-4">Vos articles</h3>
                   <div className="space-y-4">
-                    {cart.map(item => (
-                      <div key={item.id} className="flex justify-between">
-                        <div>
-                          <div className="font-medium">{item.vehicle.name}</div>
-                          <div className="text-sm text-primary-gray">
-                            {item.quantity} × {new Intl.NumberFormat('fr-FR', {
+                    {cart.map(item => {
+                      const vehicleName = item.vehicle?.name || item.vehicle?.marque + ' ' + item.vehicle?.modele || 'Véhicule'
+                      const unitPrice = item.unitPrice || item.vehicle?.prix || 0
+                      const quantity = item.quantity || 1
+                      const totalPrice = unitPrice * quantity
+                      
+                      return (
+                        <div key={item.id} className="flex justify-between">
+                          <div>
+                            <div className="font-medium">{vehicleName}</div>
+                            <div className="text-sm text-primary-gray">
+                              {quantity} × {new Intl.NumberFormat('fr-FR', {
+                                style: 'currency',
+                                currency: 'EUR'
+                              }).format(unitPrice)}
+                            </div>
+                          </div>
+                          <div className="font-bold">
+                            {new Intl.NumberFormat('fr-FR', {
                               style: 'currency',
                               currency: 'EUR'
-                            }).format(item.unitPrice)}
+                            }).format(totalPrice)}
                           </div>
                         </div>
-                        <div className="font-bold">
-                          {new Intl.NumberFormat('fr-FR', {
-                            style: 'currency',
-                            currency: 'EUR'
-                          }).format(item.totalPrice)}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -637,7 +736,7 @@ const Checkout = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <FaUser className="w-4 h-4 text-primary-gray" />
-                      <span>{user?.name}</span>
+                      <span>{user?.name || 'Non connecté'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <FaBuilding className="w-4 h-4 text-primary-gray" />
@@ -656,7 +755,7 @@ const Checkout = () => {
                     <div>
                       <div className="font-medium">Paiement sécurisé</div>
                       <div className="text-sm text-primary-gray">
-                        Vos données sont protégées
+                        Vos données sont protégées par chiffrement SSL
                       </div>
                     </div>
                   </div>

@@ -1,9 +1,12 @@
+// src/main/java/com/vehicules/controllers/PdfController.java
 package com.vehicules.controllers;
 
 import com.vehicules.core.entities.Commande;
 import com.vehicules.pdf.dto.PdfRequestDTO;
 import com.vehicules.pdf.dto.PdfResponseDTO;
+import com.vehicules.pdf.dto.LiasseViergeDTO;
 import com.vehicules.pdf.services.DocumentService;
+import com.vehicules.pdf.services.LiasseViergeService;
 import com.vehicules.repositories.CommandeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
@@ -13,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +33,9 @@ public class PdfController {
     @Autowired
     private CommandeRepository commandeRepository;
     
+    @Autowired
+    private LiasseViergeService liasseViergeService;
+    
     @PostMapping("/generate")
     public ResponseEntity<PdfResponseDTO> generatePdf(@RequestBody PdfRequestDTO request) {
         try {
@@ -36,12 +44,12 @@ public class PdfController {
             
             byte[] pdfContent = documentService.generateDocumentByType(commande, request.getDocumentType());
             
-            PdfResponseDTO response = new PdfResponseDTO(
-                UUID.randomUUID().toString(),
-                request.getDocumentType(),
-                "/api/pdf/download/" + request.getCommandeId() + "/" + request.getDocumentType(),
-                pdfContent.length
-            );
+            PdfResponseDTO response = new PdfResponseDTO();
+            response.setDocumentId(UUID.randomUUID().toString());
+            response.setDocumentType(request.getDocumentType());
+            response.setDownloadUrl("/api/pdf/download/" + request.getCommandeId() + "/" + request.getDocumentType());
+            response.setFileSize(pdfContent.length);
+            response.setGeneratedAt(new Date().toString());
             
             return ResponseEntity.ok(response);
             
@@ -88,12 +96,13 @@ public class PdfController {
             String[] documentTypes = {"DEMANDE_IMMATRICULATION", "CERTIFICAT_CESSION", "BON_COMMANDE"};
             
             for (int i = 0; i < documents.size(); i++) {
-                PdfResponseDTO response = new PdfResponseDTO(
-                    UUID.randomUUID().toString(),
-                    documentTypes[i],
-                    "/api/pdf/download/" + commandeId + "/" + documentTypes[i],
-                    documents.get(i).length
-                );
+                PdfResponseDTO response = new PdfResponseDTO();
+                response.setDocumentId(UUID.randomUUID().toString());
+                response.setDocumentType(documentTypes[i]);
+                response.setDownloadUrl("/api/pdf/download/" + commandeId + "/" + documentTypes[i]);
+                response.setFileSize(documents.get(i).length);
+                response.setGeneratedAt(new Date().toString());
+                
                 responses.add(response);
             }
             
@@ -102,6 +111,41 @@ public class PdfController {
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors de la génération de la liasse", e);
         }
+    }
+    
+    @GetMapping("/liasse-vierge")
+    public ResponseEntity<LiasseViergeDTO> getLiasseVierge() {
+        List<String> documents = liasseViergeService.getDocumentsVierges();
+        
+        LiasseViergeDTO response = new LiasseViergeDTO();
+        response.setDocuments(documents);
+        response.setGeneratedAt(new Date().toString());
+        response.setMessage("Liasse vierge générée avec succès");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/document-vierge/{documentType}")
+    public ResponseEntity<ByteArrayResource> downloadDocumentVierge(
+            @PathVariable String documentType) {
+        
+        byte[] pdfContent = liasseViergeService.generateDocumentVierge(documentType);
+        
+        String filename = "document_vierge_" + documentType.toLowerCase() + ".pdf";
+        
+        ByteArrayResource resource = new ByteArrayResource(pdfContent);
+        
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .contentType(MediaType.APPLICATION_PDF)
+            .contentLength(pdfContent.length)
+            .body(resource);
+    }
+    
+    @PostMapping("/liasse-vierge/reinitialiser")
+    public ResponseEntity<String> reinitialiserLiasseVierge() {
+        liasseViergeService.reinitialiserLiasse();
+        return ResponseEntity.ok("Liasse vierge réinitialisée avec succès");
     }
     
     @GetMapping("/preview/{commandeId}/{documentType}")
@@ -113,7 +157,7 @@ public class PdfController {
             Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
             
-            // Utiliser l'adapteur pour générer HTML
+            // Créer un générateur pour l'aperçu
             com.vehicules.patterns.adapter.DocumentGenerator generator = 
                 new com.vehicules.patterns.adapter.ItextPdfAdapter();
             
@@ -163,10 +207,10 @@ public class PdfController {
     }
     
     private String getDocumentContent(Commande commande, String documentType) {
-        // Construire le contenu basique
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         return "Document: " + documentType + "\n" +
                "Commande N°: " + commande.getId() + "\n" +
-               "Client: " + commande.getClient().getNom() + "\n" +
-               "Date: " + new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date());
+               "Client: " + (commande.getClient() != null ? commande.getClient().getNom() : "Non spécifié") + "\n" +
+               "Date: " + sdf.format(new Date());
     }
 }

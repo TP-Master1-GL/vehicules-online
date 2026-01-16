@@ -1,0 +1,60 @@
+package com.vehicules.core.entities;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "commande_credit")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+public class CommandeCredit extends Commande {
+    
+    @Column(name = "taux_interet", precision = 5, scale = 2)
+    private BigDecimal tauxInteret;
+    
+    @Column(name = "duree_mois")
+    private Integer dureeMois;
+    
+    @Column(name = "organisme_credit")
+    private String organismeCredit;
+
+    @OneToOne(mappedBy = "commande", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Financement financement;
+    
+    @Override
+    public String getTypePaiement() {
+        return "CREDIT";
+    }
+    
+    // Setters (Lombok devrait les générer, mais ajoutez-les explicitement si besoin)
+    public void setTauxInteret(BigDecimal tauxInteret) {
+        this.tauxInteret = tauxInteret;
+    }
+    
+    public void setDureeMois(Integer dureeMois) {
+        this.dureeMois = dureeMois;
+    }
+    
+    public void setOrganismeCredit(String organismeCredit) {
+        this.organismeCredit = organismeCredit;
+    }
+    
+    // Méthode pour compatibilité avec PdfService
+    public BigDecimal getFinancement() {
+
+    public Financement getFinancementEntity() {
+        return financement;
+    }
+    
+    public void setFinancementEntity(Financement financement) {
+        this.financement = financement;
+    }
+        // Retourne le montant total comme financement
+        return this.getMontantTotal() != null ? this.getMontantTotal() : BigDecimal.ZERO;
+    }
+}

@@ -2,6 +2,8 @@
 package com.vehicules.patterns.template;
 
 import com.vehicules.core.entities.Commande;
+import com.vehicules.core.entities.LigneCommande;
+import com.vehicules.core.entities.Societe;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,10 +19,15 @@ public class CalculCommandeLU extends CalculCommandeTemplate {
         double totalTVA = sousTotal * (1 + TVA_LU);
         
         // Taxe supplémentaire pour les voitures au Luxembourg
-        boolean contientVoiture = commande.getLignes().stream()
-            .anyMatch(ligne -> 
-                ligne.getVehicule() != null && 
-                "VOITURE".equalsIgnoreCase(ligne.getVehicule().getType()));
+        boolean contientVoiture = false;
+        if (commande.getLignes() != null) {
+            for (LigneCommande ligne : commande.getLignes()) {
+                if (ligne.getVehicule() != null && "VOITURE".equalsIgnoreCase(ligne.getVehicule().getType())) {
+                    contientVoiture = true;
+                    break;
+                }
+            }
+        }
         
         if (contientVoiture) {
             totalTVA += sousTotal * TAXE_VOITURE_LU;
@@ -32,7 +39,7 @@ public class CalculCommandeLU extends CalculCommandeTemplate {
     @Override
     protected double appliquerRemises(double total, Commande commande) {
         // Remise de 2% pour les entreprises au Luxembourg
-        if (commande.getClient() != null && commande.getClient().estEntreprise()) {
+        if (commande.getClient() != null && commande.getClient() instanceof Societe) {
             return total * (1 - REMISE_ENTREPRISE);
         }
         return total;

@@ -2,23 +2,20 @@ package com.vehicules.controllers;
 
 import com.vehicules.api.dto.VehiculeDTO;
 import com.vehicules.core.entities.*;
-import com.vehicules.core.entities.AutomobileElectrique;
-import com.vehicules.core.entities.AutomobileEssence;
-import com.vehicules.core.entities.ScooterElectrique;
-import com.vehicules.core.entities.ScooterEssence;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.*;
 import com.vehicules.services.CatalogueService;
+import com.vehicules.services.VehicleDisplayService;
+import com.vehicules.services.VehiculeImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -41,333 +38,739 @@ public class AdminController {
 
     @Autowired
     private CatalogueService catalogueService;
+    
+    @Autowired
+    private VehicleDisplayService vehicleDisplayService;
+    
+    @Autowired
+    private VehiculeImageService vehiculeImageService;
+
+    // ========== ENDPOINTS DE TEST ==========
+    
+    @GetMapping("/test")
+    public ResponseEntity<?> testAdminEndpoint() {
+        System.out.println("✅ [ADMIN CONTROLLER] Test endpoint appelé");
+        return ResponseEntity.ok(Map.of(
+            "status", "OK",
+            "message", "Admin controller fonctionnel",
+            "endpoint", "/api/admin",
+            "timestamp", new Date().toString(),
+            "javaVersion", System.getProperty("java.version")
+        ));
+    }
+
+    // ========== GESTION UTILISATEURS ==========
+
+    @GetMapping("/utilisateurs")
+    public ResponseEntity<?> getAllUtilisateurs(
+            @RequestParam(required = false) Role role,
+            @RequestParam(required = false, defaultValue = "true") boolean actif) {
+        
+        try {
+            List<Client> utilisateurs;
+
+            if (role != null) {
+                utilisateurs = clientRepository.findAll().stream()
+                        .filter(u -> u.getRole() == role && isClientEnabled(u) == actif)
+                        .toList();
+            } else {
+                utilisateurs = clientRepository.findAll().stream()
+                        .filter(u -> isClientEnabled(u) == actif)
+                        .toList();
+            }
+
+            return ResponseEntity.ok(utilisateurs);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération utilisateurs: " + e.getMessage()));
+        }
+    }
+
+    // ========== GESTION DES VÉHICULES ==========
+
+    @GetMapping("/vehicules")
+    public ResponseEntity<?> getAllVehicules() {
+        try {
+            List<VehiculeDTO> vehicules = catalogueService.getCatalogueUneLigne();
+            
+            // Enrichir les DTO avec les images
+            for (VehiculeDTO dto : vehicules) {
+                if (dto.getId() != null) {
+                    List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(dto.getId());
+                    if (!images.isEmpty()) {
+                        // Trouver l'image principale
+                        Optional<VehiculeImage> mainImage = images.stream()
+                                .filter(VehiculeImage::isMain)
+                                .findFirst();
+                        
+                        if (mainImage.isPresent()) {
+                            dto.setImageUrl(mainImage.get().getFileUrl());
+                            dto.setImageThumbnailUrl(mainImage.get().getThumbnailUrl());
+                        }
+                        
+                        // Convertir les images en format pour le frontend
+                        List<Map<String, Object>> imageList = new ArrayList<>();
+                        for (VehiculeImage img : images) {
+                            Map<String, Object> imageMap = new HashMap<>();
+                            imageMap.put("id", img.getId());
+                            imageMap.put("fileName", img.getFileName());
+                            imageMap.put("fileUrl", img.getFileUrl());
+                            imageMap.put("thumbnailUrl", img.getThumbnailUrl());
+                            imageMap.put("isMain", img.isMain());
+                            imageMap.put("fileSize", img.getFileSize());
+                            imageMap.put("fileType", img.getFileType());
+                            imageList.add(imageMap);
+                        }
+                        
+                        dto.setImages(imageList);
+                    }
+                }
+            }
+            
+            return ResponseEntity.ok(vehicules);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération véhicules: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/vehicules/{id}")
+    public ResponseEntity<?> getVehiculeById(@PathVariable Long id) {
+        try {
+            VehiculeDTO vehicule = catalogueService.getVehiculeById(id);
+            if (vehicule == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Récupérer les images
+            List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(id);
+            List<Map<String, Object>> imageList = new ArrayList<>();
+            
+            for (VehiculeImage img : images) {
+                Map<String, Object> imageMap = new HashMap<>();
+                imageMap.put("id", img.getId());
+                imageMap.put("fileName", img.getFileName());
+                imageMap.put("fileUrl", img.getFileUrl());
+                imageMap.put("thumbnailUrl", img.getThumbnailUrl());
+                imageMap.put("isMain", img.isMain());
+                imageMap.put("fileSize", img.getFileSize());
+                imageMap.put("fileType", img.getFileType());
+                imageMap.put("uploadDate", img.getUploadDate());
+                imageList.add(imageMap);
+            }
+            
+            vehicule.setImages(imageList);
+            
+            // Trouver l'image principale
+            Optional<VehiculeImage> mainImage = images.stream()
+                    .filter(VehiculeImage::isMain)
+                    .findFirst();
+            
+            if (mainImage.isPresent()) {
+                vehicule.setImageUrl(mainImage.get().getFileUrl());
+                vehicule.setImageThumbnailUrl(mainImage.get().getThumbnailUrl());
+            }
+            
+            return ResponseEntity.ok(vehicule);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération véhicule: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/vehicules")
+    public ResponseEntity<?> createVehicule(@RequestBody Map<String, Object> vehiculeData) {
+        try {
+            System.out.println("📥 [ADMIN] Données reçues création véhicule: " + vehiculeData);
+            
+            Vehicule vehicule = convertMapToVehiculeEntity(vehiculeData, null);
+            Vehicule saved = vehiculeRepository.save(vehicule);
+            
+            System.out.println("✅ [ADMIN] Véhicule créé avec ID: " + saved.getId());
+            
+            VehiculeDTO dto = convertToDTO(saved);
+            return ResponseEntity.ok(dto);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur création véhicule: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur création véhicule: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/vehicules/{id}")
+    public ResponseEntity<?> updateVehicule(@PathVariable Long id, @RequestBody Map<String, Object> vehiculeData) {
+        try {
+            System.out.println("📥 [ADMIN] Données reçues modification véhicule ID " + id + ": " + vehiculeData);
+            
+            Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
+            if (vehiculeOpt.isPresent()) {
+                Vehicule existingVehicule = vehiculeOpt.get();
+                Vehicule updatedVehicule = convertMapToVehiculeEntity(vehiculeData, existingVehicule);
+                Vehicule saved = vehiculeRepository.save(updatedVehicule);
+                
+                System.out.println("✅ [ADMIN] Véhicule modifié avec succès");
+                
+                VehiculeDTO dto = convertToDTO(saved);
+                return ResponseEntity.ok(dto);
+            }
+            
+            return ResponseEntity.notFound().build();
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur modification véhicule: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur modification véhicule: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/vehicules/{id}")
+    public ResponseEntity<?> deleteVehicule(@PathVariable Long id) {
+        try {
+            if (vehiculeRepository.existsById(id)) {
+                // Supprimer d'abord les images
+                vehiculeImageService.deleteAllVehiculeImages(id);
+                // Puis supprimer le véhicule
+                vehiculeRepository.deleteById(id);
+                return ResponseEntity.ok().build();
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur suppression véhicule: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/vehicules/{id}/solde")
+    public ResponseEntity<?> mettreEnSolde(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        try {
+            Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
+            if (vehiculeOpt.isPresent()) {
+                Vehicule vehicule = vehiculeOpt.get();
+                vehicule.setEnSolde(true);
+                
+                if (request.containsKey("pourcentageSolde")) {
+                    Object pourcObj = request.get("pourcentageSolde");
+                    BigDecimal pourcentage;
+                    if (pourcObj instanceof Number) {
+                        pourcentage = BigDecimal.valueOf(((Number) pourcObj).doubleValue());
+                    } else if (pourcObj instanceof String) {
+                        try {
+                            pourcentage = new BigDecimal((String) pourcObj);
+                        } catch (Exception e) {
+                            pourcentage = BigDecimal.valueOf(10.0);
+                        }
+                    } else {
+                        pourcentage = BigDecimal.valueOf(10.0);
+                    }
+                    vehicule.setPourcentageSolde(pourcentage);
+                }
+                
+                Vehicule updated = vehiculeRepository.save(vehicule);
+                VehiculeDTO dto = convertToDTO(updated);
+                return ResponseEntity.ok(dto);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur mise en solde: " + e.getMessage()));
+        }
+    }
+
+    // ========== GESTION DES IMAGES ==========
+
+    @PostMapping("/vehicules/{id}/upload-image")
+    public ResponseEntity<?> uploadVehiculeImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "isMain", defaultValue = "false") boolean isMain) {
+        
+        try {
+            System.out.println("📷 [ADMIN] Upload image pour véhicule ID " + id);
+            System.out.println("📷 Nom du fichier: " + file.getOriginalFilename());
+            System.out.println("📷 Taille: " + file.getSize() + " bytes");
+            System.out.println("📷 Type: " + file.getContentType());
+            System.out.println("📷 Est principale: " + isMain);
+            
+            VehiculeImage image;
+            if (isMain) {
+                image = vehiculeImageService.uploadMainImage(id, file);
+            } else {
+                image = vehiculeImageService.uploadAdditionalImage(id, file);
+            }
+            
+            System.out.println("✅ [ADMIN] Image uploadée avec succès: " + image.getFileUrl());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Image uploadée avec succès",
+                "image", Map.of(
+                    "id", image.getId(),
+                    "fileName", image.getFileName(),
+                    "fileUrl", image.getFileUrl(),
+                    "thumbnailUrl", image.getThumbnailUrl(),
+                    "isMain", image.isMain(),
+                    "uploadDate", image.getUploadDate()
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur upload image: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur lors de l'upload: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/vehicules/{id}/upload-multiple")
+    public ResponseEntity<?> uploadMultipleImages(
+            @PathVariable Long id,
+            @RequestParam("files") MultipartFile[] files) {
+        
+        try {
+            System.out.println("📷 [ADMIN] Upload multiple images pour véhicule ID " + id);
+            System.out.println("📷 Nombre de fichiers: " + files.length);
+            
+            List<Map<String, Object>> uploadedImages = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+            
+            for (int i = 0; i < files.length; i++) {
+                MultipartFile file = files[i];
+                try {
+                    // Vérifier si c'est la première image et s'il n'y a pas déjà une image principale
+                    boolean isMain = (i == 0 && vehiculeImageService.getMainImage(id) == null);
+                    
+                    VehiculeImage image;
+                    if (isMain) {
+                        image = vehiculeImageService.uploadMainImage(id, file);
+                    } else {
+                        image = vehiculeImageService.uploadAdditionalImage(id, file);
+                    }
+                    
+                    uploadedImages.add(Map.of(
+                        "fileName", image.getFileName(),
+                        "fileUrl", image.getFileUrl(),
+                        "isMain", image.isMain(),
+                        "success", true
+                    ));
+                    
+                    System.out.println("✅ [ADMIN] Image " + (i+1) + " uploadée: " + file.getOriginalFilename());
+                    
+                } catch (Exception e) {
+                    errors.add("Fichier " + file.getOriginalFilename() + ": " + e.getMessage());
+                    System.err.println("❌ [ADMIN] Erreur upload image " + file.getOriginalFilename() + ": " + e.getMessage());
+                }
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalFiles", files.length);
+            response.put("uploadedCount", uploadedImages.size());
+            response.put("failedCount", errors.size());
+            response.put("uploadedImages", uploadedImages);
+            
+            if (!errors.isEmpty()) {
+                response.put("errors", errors);
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur upload multiple: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur lors de l'upload multiple: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/vehicules/{id}/images")
+    public ResponseEntity<?> getVehiculeImages(@PathVariable Long id) {
+        try {
+            System.out.println("📷 [ADMIN] Récupération images pour véhicule ID " + id);
+            
+            List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(id);
+            System.out.println("✅ [ADMIN] " + images.size() + " images récupérées");
+            
+            List<Map<String, Object>> imageList = new ArrayList<>();
+            for (VehiculeImage image : images) {
+                Map<String, Object> imageMap = new HashMap<>();
+                imageMap.put("id", image.getId());
+                imageMap.put("fileName", image.getFileName());
+                imageMap.put("fileUrl", image.getFileUrl());
+                imageMap.put("thumbnailUrl", image.getThumbnailUrl());
+                imageMap.put("isMain", image.isMain());
+                imageMap.put("fileSize", image.getFileSize());
+                imageMap.put("fileType", image.getFileType());
+                imageMap.put("uploadDate", image.getUploadDate());
+                imageMap.put("uploadOrder", image.getUploadOrder());
+                imageList.add(imageMap);
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "vehiculeId", id,
+                "totalImages", images.size(),
+                "images", imageList
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur récupération images: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération images: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/vehicules/images/{imageId}")
+    public ResponseEntity<?> deleteVehiculeImage(@PathVariable Long imageId) {
+        try {
+            System.out.println("🗑️ [ADMIN] Suppression image ID " + imageId);
+            
+            vehiculeImageService.deleteImage(imageId);
+            
+            System.out.println("✅ [ADMIN] Image supprimée avec succès");
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Image supprimée avec succès"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur suppression image: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/vehicules/images/{imageId}/set-main")
+    public ResponseEntity<?> setImageAsMain(@PathVariable Long imageId) {
+        try {
+            System.out.println("⭐ [ADMIN] Définition image ID " + imageId + " comme principale");
+            
+            vehiculeImageService.setImageAsMain(imageId);
+            
+            System.out.println("✅ [ADMIN] Image définie comme principale");
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Image définie comme principale avec succès"
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("❌ [ADMIN] Erreur définition image principale: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ========== GESTION DES COMMANDES ==========
+
+    @GetMapping("/commandes")
+    public ResponseEntity<?> getAllCommandes(
+            @RequestParam(required = false) String statut) {
+        try {
+            List<Commande> commandes;
+            if (statut != null && !statut.isEmpty()) {
+                commandes = commandeRepository.findByStatut(statut);
+            } else {
+                commandes = commandeRepository.findAll();
+            }
+            return ResponseEntity.ok(commandes);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération commandes: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/commandes/{id}/statut")
+    public ResponseEntity<?> updateCommandeStatut(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        try {
+            Optional<Commande> commandeOpt = commandeRepository.findById(id);
+            if (commandeOpt.isPresent()) {
+                Commande commande = commandeOpt.get();
+                String statut = request.get("statut");
+                if (statut != null && !statut.trim().isEmpty()) {
+                    commande.setStatut(statut);
+                    Commande updated = commandeRepository.save(commande);
+                    return ResponseEntity.ok(updated);
+                } else {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Le statut est requis"));
+                }
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur mise à jour statut: " + e.getMessage()));
+        }
+    }
+
+    // ========== GESTION DES OPTIONS ==========
+
+    @GetMapping("/options")
+    public ResponseEntity<?> getAllOptions() {
+        try {
+            List<OptionVehicule> options = optionVehiculeRepository.findAll();
+            return ResponseEntity.ok(options);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Erreur récupération options: " + e.getMessage()));
+        }
+    }
+
+    // ========== MÉTHODES UTILITAIRES ==========
 
     private boolean isClientEnabled(Client client) {
         if (client instanceof ClientParticulier) {
             ClientParticulier cp = (ClientParticulier) client;
             return cp.getEnabled() != null ? cp.getEnabled() : true;
         }
-        return true; // Les sociétés sont toujours actives par défaut
+        return true;
     }
 
-    @GetMapping("/utilisateurs")
-    public ResponseEntity<List<Client>> getAllUtilisateurs(
-            @RequestParam(required = false) Role role,
-            @RequestParam(required = false, defaultValue = "true") boolean actif) {
-
-        List<Client> utilisateurs;
-
-        if (role != null) {
-            utilisateurs = clientRepository.findAll().stream()
-                    .filter(u -> u.getRole() == role && isClientEnabled(u) == actif)
-                    .toList();
-        } else {
-            utilisateurs = clientRepository.findAll().stream()
-                    .filter(u -> isClientEnabled(u) == actif)
-                    .toList();
-        }
-
-        return ResponseEntity.ok(utilisateurs);
-    }
-
-    @PostMapping("/utilisateurs")
-    public ResponseEntity<Client> createUtilisateur(@RequestBody Client utilisateur) {
-        Client savedUser = clientRepository.save(utilisateur);
-        return ResponseEntity.ok(savedUser);
-    }
-
-    @PutMapping("/utilisateurs/{id}/role")
-    public ResponseEntity<Client> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> request) {
-        Optional<Client> userOpt = clientRepository.findById(id);
-        if (userOpt.isPresent()) {
-            Client user = userOpt.get();
-            Role newRole = Role.valueOf(request.get("role"));
-            user.setRole(newRole);
-            user = clientRepository.save(user);
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/utilisateurs/{id}/desactiver")
-    public ResponseEntity<Client> deactivateUtilisateur(@PathVariable Long id) {
-        Optional<Client> userOpt = clientRepository.findById(id);
-        if (userOpt.isPresent()) {
-            Client user = userOpt.get();
-            if (user instanceof ClientParticulier) {
-                ((ClientParticulier) user).setEnabled(false);
-                user = clientRepository.save(user);
-                return ResponseEntity.ok(user);
-            }
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @GetMapping("/configurations")
-    public ResponseEntity<Map<String, String>> getConfigurations() {
-        // TODO: Implémenter un système de configuration
-        Map<String, String> configs = Map.of(
-            "tva", "20.0",
-            "seuilStock", "5",
-            "maxCredit", "50000"
-        );
-        return ResponseEntity.ok(configs);
-    }
-
-    @PutMapping("/configurations/{key}")
-    public ResponseEntity<String> updateConfiguration(@PathVariable String key, @RequestBody Map<String, String> request) {
-        String value = request.get("value");
-        // TODO: Sauvegarder dans une table de configuration
-        return ResponseEntity.ok("Configuration " + key + " mise à jour: " + value);
-    }
-
-    @GetMapping("/health-detailed")
-    public ResponseEntity<Map<String, Object>> getDetailedHealth() {
-        // TODO: Implémenter des métriques détaillées
-        Map<String, Object> health = Map.of(
-            "status", "UP",
-            "database", "CONNECTED",
-            "diskSpace", "OK",
-            "memory", "OK"
-        );
-        return ResponseEntity.ok(health);
-    }
-
-    @GetMapping("/metrics")
-    public ResponseEntity<Map<String, Object>> getMetrics() {
-        // TODO: Intégrer Micrometer pour les métriques réelles
-        Map<String, Object> metrics = Map.of(
-            "totalRequests", 1250,
-            "activeUsers", 45,
-            "memoryUsage", "78%",
-            "cpuUsage", "45%"
-        );
-        return ResponseEntity.ok(metrics);
-    }
-
-    @PostMapping("/database/backup")
-    public ResponseEntity<String> createBackup() {
-        // TODO: Implémenter le backup de base de données
-        return ResponseEntity.ok("Backup créé avec succès");
-    }
-
-    @PostMapping("/database/optimize")
-    public ResponseEntity<String> optimizeDatabase() {
-        // TODO: Implémenter l'optimisation de base de données
-        return ResponseEntity.ok("Base de données optimisée");
-    }
-
-    // ========== GESTION DES VÉHICULES ==========
-
-    @GetMapping("/vehicules")
-    public ResponseEntity<List<VehiculeDTO>> getAllVehicules() {
-        List<VehiculeDTO> vehicules = catalogueService.getCatalogueUneLigne();
-        return ResponseEntity.ok(vehicules);
-    }
-
-    @GetMapping("/vehicules/{id}")
-    public ResponseEntity<VehiculeDTO> getVehiculeById(@PathVariable Long id) {
-        VehiculeDTO vehicule = catalogueService.getVehiculeById(id);
-        return ResponseEntity.ok(vehicule);
-    }
-
-    @PostMapping("/vehicules")
-    public ResponseEntity<Vehicule> createVehicule(@RequestBody Map<String, Object> vehiculeData) {
-        Vehicule vehicule = createVehiculeFromData(vehiculeData);
-        Vehicule saved = vehiculeRepository.save(vehicule);
-        return ResponseEntity.ok(saved);
-    }
-
-    @PutMapping("/vehicules/{id}")
-    public ResponseEntity<Vehicule> updateVehicule(@PathVariable Long id, @RequestBody Map<String, Object> vehiculeData) {
-        Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
-        if (vehiculeOpt.isPresent()) {
-            Vehicule vehicule = vehiculeOpt.get();
-            updateVehiculeFromData(vehicule, vehiculeData);
-            Vehicule updated = vehiculeRepository.save(vehicule);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/vehicules/{id}")
-    public ResponseEntity<Void> deleteVehicule(@PathVariable Long id) {
-        if (vehiculeRepository.existsById(id)) {
-            vehiculeRepository.deleteById(id);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/vehicules/{id}/solde")
-    public ResponseEntity<Vehicule> mettreEnSolde(@PathVariable Long id, @RequestBody Map<String, Object> request) {
-        Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
-        if (vehiculeOpt.isPresent()) {
-            Vehicule vehicule = vehiculeOpt.get();
-            vehicule.setEnSolde(true);
-            if (request.containsKey("pourcentageSolde")) {
-                BigDecimal pourcentage = new BigDecimal(request.get("pourcentageSolde").toString());
-                vehicule.setPourcentageSolde(pourcentage);
-            }
-            Vehicule updated = vehiculeRepository.save(vehicule);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // ========== GESTION DES COMMANDES ==========
-
-    @GetMapping("/commandes")
-    public ResponseEntity<List<Commande>> getAllCommandes(
-            @RequestParam(required = false) String statut) {
-        List<Commande> commandes;
-        if (statut != null && !statut.isEmpty()) {
-            commandes = commandeRepository.findByStatut(statut);
-        } else {
-            commandes = commandeRepository.findAll();
-        }
-        return ResponseEntity.ok(commandes);
-    }
-
-    @GetMapping("/commandes/{id}")
-    public ResponseEntity<Commande> getCommandeById(@PathVariable Long id) {
-        Optional<Commande> commandeOpt = commandeRepository.findById(id);
-        return commandeOpt.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/commandes/{id}/statut")
-    public ResponseEntity<Commande> updateCommandeStatut(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-        Optional<Commande> commandeOpt = commandeRepository.findById(id);
-        if (commandeOpt.isPresent()) {
-            Commande commande = commandeOpt.get();
-            commande.setStatut(request.get("statut"));
-            Commande updated = commandeRepository.save(commande);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // ========== GESTION DES OPTIONS ==========
-
-    @GetMapping("/options")
-    public ResponseEntity<List<OptionVehicule>> getAllOptions() {
-        List<OptionVehicule> options = optionVehiculeRepository.findAll();
-        return ResponseEntity.ok(options);
-    }
-
-    @PostMapping("/options")
-    public ResponseEntity<OptionVehicule> createOption(@RequestBody OptionVehicule option) {
-        OptionVehicule saved = optionVehiculeRepository.save(option);
-        return ResponseEntity.ok(saved);
-    }
-
-    @PutMapping("/options/{id}")
-    public ResponseEntity<OptionVehicule> updateOption(@PathVariable Long id, @RequestBody OptionVehicule option) {
-        if (optionVehiculeRepository.existsById(id)) {
-            option.setId(id);
-            OptionVehicule updated = optionVehiculeRepository.save(option);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/options/{id}")
-    public ResponseEntity<Void> deleteOption(@PathVariable Long id) {
-        if (optionVehiculeRepository.existsById(id)) {
-            optionVehiculeRepository.deleteById(id);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // ========== MÉTHODES UTILITAIRES PRIVÉES ==========
-
-    private Vehicule createVehiculeFromData(Map<String, Object> data) {
-        String type = (String) data.get("type"); // "AUTOMOBILE" ou "SCOOTER"
-        String energie = (String) data.get("energie"); // "ESSENCE", "ELECTRIQUE"
-
+    private Vehicule convertMapToVehiculeEntity(Map<String, Object> data, Vehicule existingVehicule) {
+        System.out.println("🔧 [ADMIN] Conversion données Map -> Entité Vehicule");
+        
+        String type = getValueAsString(data, "typeVehicule", "type", "AUTOMOBILE");
+        String energie = getValueAsString(data, "typeCarburant", "energie", "ESSENCE");
+        
+        System.out.println("📋 Type détecté: " + type + ", Energie: " + energie);
+        
         Vehicule vehicule;
-
-        if ("AUTOMOBILE".equals(type)) {
-            if ("ELECTRIQUE".equals(energie)) {
-                AutomobileElectrique auto = new AutomobileElectrique();
-                auto.setAutonomie(((Number) data.get("autonomie")).intValue());
-                auto.setTempsChargeRapide(((Number) data.get("tempsChargeRapide")).intValue());
-                auto.setTypeChargeur((String) data.get("typeChargeur"));
-                vehicule = auto;
-            } else {
-                AutomobileEssence auto = new AutomobileEssence();
-                auto.setConsommation(new BigDecimal(data.get("consommation").toString()));
-                auto.setCarburant((String) data.get("carburant"));
-                auto.setAutonomie(((Number) data.get("autonomie")).intValue());
-                vehicule = auto;
-            }
-            Automobile auto = (Automobile) vehicule;
-            auto.setNombrePortes(((Number) data.get("nombrePortes")).intValue());
-            auto.setNombrePlaces(((Number) data.get("nombrePlaces")).intValue());
-            auto.setCouleur((String) data.get("couleur"));
-            auto.setPuissance(((Number) data.get("puissance")).intValue());
-            auto.setTransmission((String) data.get("transmission"));
-        } else { // SCOOTER
-            if ("ELECTRIQUE".equals(energie)) {
-                ScooterElectrique scooter = new ScooterElectrique();
-                scooter.setAutonomie(((Number) data.get("autonomie")).intValue());
-                scooter.setTempsCharge(((Number) data.get("tempsCharge")).intValue());
-                scooter.setTypeBatterie((String) data.get("typeBatterie"));
-                vehicule = scooter;
-            } else {
-                ScooterEssence scooter = new ScooterEssence();
-                scooter.setConsommation(new BigDecimal(data.get("consommation").toString()));
-                scooter.setCarburant((String) data.get("carburant"));
-                scooter.setAutonomie(((Number) data.get("autonomie")).intValue());
-                vehicule = scooter;
-            }
-            Scooter scooter = (Scooter) vehicule;
-            scooter.setCouleur((String) data.get("couleur"));
-            scooter.setCylindree(((Number) data.get("cylindree")).intValue());
-            scooter.setCategoriePermis((String) data.get("categoriePermis"));
+        
+        if (existingVehicule != null) {
+            vehicule = existingVehicule;
+        } else {
+            vehicule = createNewVehiculeInstance(type, energie);
         }
-
-        // Propriétés communes
-        vehicule.setMarque((String) data.get("marque"));
-        vehicule.setModele((String) data.get("modele"));
-        vehicule.setPrixBase(new BigDecimal(data.get("prixBase").toString()));
-        vehicule.setDateStock(LocalDate.parse(data.get("dateStock").toString()));
-        vehicule.setEnSolde(data.containsKey("enSolde") && (Boolean) data.get("enSolde"));
-        if (data.containsKey("pourcentageSolde")) {
-            vehicule.setPourcentageSolde(new BigDecimal(data.get("pourcentageSolde").toString()));
-        }
-
+        
+        updateCommonProperties(vehicule, data);
+        updateSpecificProperties(vehicule, data, type, energie);
+        
         return vehicule;
     }
-
-    private void updateVehiculeFromData(Vehicule vehicule, Map<String, Object> data) {
-        if (data.containsKey("marque")) vehicule.setMarque((String) data.get("marque"));
-        if (data.containsKey("modele")) vehicule.setModele((String) data.get("modele"));
-        if (data.containsKey("prixBase")) vehicule.setPrixBase(new BigDecimal(data.get("prixBase").toString()));
-        if (data.containsKey("dateStock")) vehicule.setDateStock(LocalDate.parse(data.get("dateStock").toString()));
-        if (data.containsKey("enSolde")) vehicule.setEnSolde((Boolean) data.get("enSolde"));
-        if (data.containsKey("pourcentageSolde")) {
-            vehicule.setPourcentageSolde(new BigDecimal(data.get("pourcentageSolde").toString()));
+    
+    private Vehicule createNewVehiculeInstance(String type, String energie) {
+        if ("AUTOMOBILE".equalsIgnoreCase(type)) {
+            if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
+                return new AutomobileElectrique();
+            } else {
+                return new AutomobileEssence();
+            }
+        } else { // SCOOTER
+            if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
+                return new ScooterElectrique();
+            } else {
+                return new ScooterEssence();
+            }
         }
-
-        // Mise à jour spécifique selon le type
-        if (vehicule instanceof Automobile) {
+    }
+    
+    private void updateCommonProperties(Vehicule vehicule, Map<String, Object> data) {
+        if (data.containsKey("marque")) {
+            vehicule.setMarque(getValueAsString(data, "marque", ""));
+        }
+        if (data.containsKey("modele")) {
+            vehicule.setModele(getValueAsString(data, "modele", ""));
+        }
+        
+        if (data.containsKey("prix") || data.containsKey("prixBase")) {
+            BigDecimal prix = getValueAsBigDecimal(data, "prix", "prixBase", BigDecimal.valueOf(15000000));
+            vehicule.setPrixBase(prix);
+        }
+        
+        if (data.containsKey("dateStock")) {
+            String dateStr = getValueAsString(data, "dateStock", "");
+            if (!dateStr.isEmpty()) {
+                try {
+                    vehicule.setDateStock(LocalDate.parse(dateStr));
+                } catch (Exception e) {
+                    vehicule.setDateStock(LocalDate.now());
+                }
+            }
+        } else if (vehicule.getDateStock() == null) {
+            vehicule.setDateStock(LocalDate.now());
+        }
+        
+        if (data.containsKey("enSolde")) {
+            boolean enSolde = getValueAsBoolean(data, "enSolde", false);
+            vehicule.setEnSolde(enSolde);
+        }
+        
+        if (vehicule.getEnSolde() && data.containsKey("pourcentageSolde")) {
+            BigDecimal pourcentage = getValueAsBigDecimal(data, "pourcentageSolde", BigDecimal.valueOf(10.0));
+            vehicule.setPourcentageSolde(pourcentage);
+        }
+    }
+    
+    private void updateSpecificProperties(Vehicule vehicule, Map<String, Object> data, String type, String energie) {
+        if ("AUTOMOBILE".equalsIgnoreCase(type)) {
             Automobile auto = (Automobile) vehicule;
-            if (data.containsKey("nombrePortes")) auto.setNombrePortes(((Number) data.get("nombrePortes")).intValue());
-            if (data.containsKey("nombrePlaces")) auto.setNombrePlaces(((Number) data.get("nombrePlaces")).intValue());
-            if (data.containsKey("couleur")) auto.setCouleur((String) data.get("couleur"));
-            if (data.containsKey("puissance")) auto.setPuissance(((Number) data.get("puissance")).intValue());
-            if (data.containsKey("transmission")) auto.setTransmission((String) data.get("transmission"));
-        } else if (vehicule instanceof Scooter) {
+            
+            auto.setNombrePortes(getValueAsInteger(data, "nombrePortes", 4));
+            auto.setNombrePlaces(getValueAsInteger(data, "nombrePlaces", 5));
+            auto.setCouleur(getValueAsString(data, "couleur", "#000000"));
+            auto.setPuissance(getValueAsInteger(data, "puissance", 100));
+            auto.setTransmission(getValueAsString(data, "transmission", "MANUELLE"));
+            
+            if ("ESSENCE".equalsIgnoreCase(energie)) {
+                AutomobileEssence essence = (AutomobileEssence) auto;
+                essence.setConsommation(getValueAsBigDecimal(data, "consommation", BigDecimal.valueOf(6.5)));
+                essence.setCarburant(getValueAsString(data, "carburant", "ESSENCE"));
+                essence.setAutonomie(getValueAsInteger(data, "autonomie", 600));
+            } else if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
+                AutomobileElectrique electrique = (AutomobileElectrique) auto;
+                electrique.setAutonomie(getValueAsInteger(data, "autonomie", 300));
+                electrique.setTempsChargeRapide(getValueAsInteger(data, "tempsChargeRapide", 30));
+                electrique.setTypeChargeur(getValueAsString(data, "typeChargeur", "TYPE2"));
+            }
+            
+        } else if ("SCOOTER".equalsIgnoreCase(type)) {
             Scooter scooter = (Scooter) vehicule;
-            if (data.containsKey("couleur")) scooter.setCouleur((String) data.get("couleur"));
-            if (data.containsKey("cylindree")) scooter.setCylindree(((Number) data.get("cylindree")).intValue());
-            if (data.containsKey("categoriePermis")) scooter.setCategoriePermis((String) data.get("categoriePermis"));
+            
+            scooter.setCouleur(getValueAsString(data, "couleur", "#000000"));
+            scooter.setCylindree(getValueAsInteger(data, "cylindree", 125));
+            scooter.setCategoriePermis(getValueAsString(data, "categoriePermis", "A1"));
+            
+            if ("ESSENCE".equalsIgnoreCase(energie)) {
+                ScooterEssence essence = (ScooterEssence) scooter;
+                essence.setConsommation(getValueAsBigDecimal(data, "consommation", BigDecimal.valueOf(2.5)));
+                essence.setCarburant(getValueAsString(data, "carburant", "ESSENCE"));
+                essence.setAutonomie(getValueAsInteger(data, "autonomie", 250));
+            } else if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
+                ScooterElectrique electrique = (ScooterElectrique) scooter;
+                electrique.setAutonomie(getValueAsInteger(data, "autonomie", 100));
+                electrique.setTempsCharge(getValueAsInteger(data, "tempsCharge", 180));
+                electrique.setTypeBatterie(getValueAsString(data, "typeBatterie", "LITHIUM_ION"));
+            }
         }
+    }
+    
+    private VehiculeDTO convertToDTO(Vehicule vehicule) {
+        if (vehicule == null) return null;
+
+        VehiculeDTO dto = new VehiculeDTO();
+        dto.setId(vehicule.getId());
+        dto.setMarque(vehicule.getMarque());
+        dto.setModele(vehicule.getModele());
+        dto.setPrixBase(vehicule.getPrixBase());
+        dto.setPrixFinal(vehicule.getPrixFinal());
+        dto.setDateStock(vehicule.getDateStock());
+        dto.setEnSolde(vehicule.getEnSolde());
+        dto.setPourcentageSolde(vehicule.getPourcentageSolde());
+        dto.setType(vehicule.getType());
+        dto.setEnergie(vehicule.getEnergie());
+        
+        // Images
+        dto.setImageUrl(vehicule.getImageUrl());
+        dto.setImageThumbnailUrl(vehicule.getImageThumbnailUrl());
+        dto.setAdditionalImages(vehicule.getAdditionalImages());
+
+        if (vehicleDisplayService != null) {
+            try {
+                String displayText = vehicleDisplayService.afficherAvecDecorations(vehicule);
+                dto.setDescriptionComplete(displayText);
+            } catch (Exception e) {
+                dto.setDescriptionComplete(vehicule.getMarque() + " " + vehicule.getModele());
+            }
+        }
+
+        return dto;
+    }
+    
+    // ========== MÉTHODES UTILITAIRES DE CONVERSION ==========
+    
+    private String getValueAsString(Map<String, Object> data, String key, String defaultValue) {
+        if (data.containsKey(key) && data.get(key) != null) {
+            return data.get(key).toString();
+        }
+        return defaultValue;
+    }
+    
+    private String getValueAsString(Map<String, Object> data, String key1, String key2, String defaultValue) {
+        if (data.containsKey(key1) && data.get(key1) != null) {
+            return data.get(key1).toString();
+        }
+        if (data.containsKey(key2) && data.get(key2) != null) {
+            return data.get(key2).toString();
+        }
+        return defaultValue;
+    }
+    
+    private Integer getValueAsInteger(Map<String, Object> data, String key, Integer defaultValue) {
+        if (data.containsKey(key) && data.get(key) != null) {
+            Object value = data.get(key);
+            if (value instanceof Number) {
+                return ((Number) value).intValue();
+            } else if (value instanceof String) {
+                try {
+                    return Integer.parseInt((String) value);
+                } catch (NumberFormatException e) {
+                    return defaultValue;
+                }
+            }
+        }
+        return defaultValue;
+    }
+    
+    private BigDecimal getValueAsBigDecimal(Map<String, Object> data, String key, BigDecimal defaultValue) {
+        if (data.containsKey(key) && data.get(key) != null) {
+            Object value = data.get(key);
+            if (value instanceof Number) {
+                return BigDecimal.valueOf(((Number) value).doubleValue());
+            } else if (value instanceof String) {
+                try {
+                    return new BigDecimal((String) value);
+                } catch (NumberFormatException e) {
+                    return defaultValue;
+                }
+            }
+        }
+        return defaultValue;
+    }
+    
+    private BigDecimal getValueAsBigDecimal(Map<String, Object> data, String key1, String key2, BigDecimal defaultValue) {
+        if (data.containsKey(key1) && data.get(key1) != null) {
+            Object value = data.get(key1);
+            return convertObjectToBigDecimal(value, defaultValue);
+        }
+        if (data.containsKey(key2) && data.get(key2) != null) {
+            Object value = data.get(key2);
+            return convertObjectToBigDecimal(value, defaultValue);
+        }
+        return defaultValue;
+    }
+    
+    private BigDecimal convertObjectToBigDecimal(Object value, BigDecimal defaultValue) {
+        if (value instanceof Number) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        } else if (value instanceof String) {
+            try {
+                return new BigDecimal((String) value);
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+    
+    private Boolean getValueAsBoolean(Map<String, Object> data, String key, Boolean defaultValue) {
+        if (data.containsKey(key) && data.get(key) != null) {
+            Object value = data.get(key);
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            } else if (value instanceof String) {
+                return Boolean.parseBoolean((String) value);
+            } else if (value instanceof Number) {
+                return ((Number) value).intValue() != 0;
+            }
+        }
+        return defaultValue;
     }
 }

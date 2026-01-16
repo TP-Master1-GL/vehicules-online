@@ -1,20 +1,11 @@
+// src/main/java/com/vehicules/pdf/dto/PdfRequestDTO.java
 package com.vehicules.pdf.dto;
 
 public class PdfRequestDTO {
     private Long commandeId;
     private String documentType;
-    private boolean includeWatermark;
-    private String language;
-    
-    // Constructeurs
-    public PdfRequestDTO() {}
-    
-    public PdfRequestDTO(Long commandeId, String documentType) {
-        this.commandeId = commandeId;
-        this.documentType = documentType;
-        this.includeWatermark = false;
-        this.language = "fr";
-    }
+    private boolean includeWatermark = false;
+    private String language = "fr";
     
     // Getters et Setters
     public Long getCommandeId() { return commandeId; }

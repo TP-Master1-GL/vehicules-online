@@ -8,7 +8,11 @@ import {
   FaCheckCircle, FaTimesCircle, FaChartBar, FaFileAlt, FaSearch,
   FaSync, FaEye, FaDownload, FaFilter, FaSort, FaTachometerAlt,
   FaCogs, FaWarehouse, FaMoneyBillWave, FaTags, FaExclamationTriangle,
-  FaSpinner, FaDatabase, FaChartLine, FaUserCheck
+  FaSpinner, FaDatabase, FaChartLine, FaUserCheck, FaGasPump, FaBolt,
+  FaPlug, FaTachometerAlt as FaTachometer, FaCog as FaGear,
+  FaDoorClosed, FaChair, FaMotorcycle, FaPalette, FaPercent,
+  FaImage, FaCamera, FaUpload, FaCloudUploadAlt, FaImages, FaFileUpload,
+  FaStar, FaExclamationCircle
 } from 'react-icons/fa'
 
 const AdminDashboard = () => {
@@ -50,7 +54,7 @@ const AdminDashboard = () => {
   const [vehicleFilter, setVehicleFilter] = useState('all')
   const [orderFilter, setOrderFilter] = useState('all')
 
-  // Fonctions de chargement simples et stables
+  // Fonctions de chargement
   const loadStats = useCallback(async () => {
     try {
       const [usersData, vehiclesData, ordersData] = await Promise.allSettled([
@@ -142,15 +146,13 @@ const AdminDashboard = () => {
     }
   }, [])
 
-  // Fonction principale de chargement - SIMPLIFIÉE
+  // Fonction principale de chargement
   const loadDashboardData = useCallback(async (force = false) => {
-    // Si déjà chargé et pas de force refresh, on skip
     if (!force && hasLoaded.current) {
       console.log('✅ Données déjà chargées, skip')
       return
     }
     
-    // Vérifier si le composant est toujours monté
     if (!isMounted.current) return
     
     console.log('🚀 Début du chargement dashboard')
@@ -158,13 +160,9 @@ const AdminDashboard = () => {
     hasLoaded.current = true
     
     try {
-      // Charger les stats d'abord (contient déjà users, vehicles, orders)
       const statsResult = await loadStats()
-      
-      // Charger les options séparément
       await loadOptions()
       
-      // Mettre à jour les états avec les données déjà récupérées
       if (statsResult.users) {
         setUsers(statsResult.users)
       }
@@ -188,25 +186,22 @@ const AdminDashboard = () => {
     }
   }, [loadStats, loadOptions])
 
-  // useEffect PRINCIPAL - OPTIMISÉ et SIMPLIFIÉ
+  // useEffect PRINCIPAL
   useEffect(() => {
     isMounted.current = true
     
     const initializeDashboard = async () => {
-      // Attendre que l'authentification soit chargée
       if (authLoading) {
         console.log('⏳ Auth en cours de chargement...')
         return
       }
       
-      // Vérifier l'authentification
       if (!isAuthenticated) {
         console.log('🔴 Non authentifié, redirection vers login')
         navigate('/login', { state: { from: '/admin/dashboard' } })
         return
       }
       
-      // Vérifier le rôle
       const userRole = user?.role?.toUpperCase?.() || user?.role
       if (userRole !== 'ADMIN') {
         console.log('🔴 Rôle non admin, redirection vers home')
@@ -215,21 +210,18 @@ const AdminDashboard = () => {
         return
       }
       
-      // Charger les données une seule fois
       if (!hasLoaded.current && isMounted.current) {
         console.log('🎯 Premier chargement du dashboard')
         await loadDashboardData()
       }
     }
     
-    // Délai pour éviter les conflits de rendu
     const timer = setTimeout(() => {
       if (isMounted.current) {
         initializeDashboard()
       }
     }, 100)
     
-    // Cleanup
     return () => {
       isMounted.current = false
       clearTimeout(timer)
@@ -250,7 +242,6 @@ const AdminDashboard = () => {
     try {
       await adminService.deleteVehicule(id)
       toast.success('Véhicule supprimé avec succès')
-      // Recharger uniquement les véhicules et stats
       await loadVehicles()
       const statsResult = await loadStats()
       setStats(statsResult)
@@ -263,7 +254,6 @@ const AdminDashboard = () => {
     try {
       await adminService.updateCommandeStatut(orderId, newStatus)
       toast.success(`Commande ${newStatus === 'VALIDEE' ? 'validée' : 'marquée comme livrée'}`)
-      // Recharger uniquement les commandes et stats
       await loadOrders()
       const statsResult = await loadStats()
       setStats(statsResult)
@@ -588,9 +578,9 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* Vehicle Form Modal */}
+      {/* Vehicle Form Modal avec upload d'images */}
       {showVehicleForm && (
-        <VehicleFormModal
+        <VehicleFormWithImagesModal
           vehicle={editingVehicle}
           onClose={() => {
             setShowVehicleForm(false)
@@ -716,9 +706,17 @@ const DashboardView = ({ stats, vehicles, orders, users, onAddVehicle }) => {
           <div className="space-y-3">
             {recentVehicles.length > 0 ? recentVehicles.map(vehicle => (
               <div key={vehicle.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                  <FaCar className="text-blue-600" />
-                </div>
+                {vehicle.imageUrl ? (
+                  <img 
+                    src={vehicle.imageUrl} 
+                    alt={vehicle.marque}
+                    className="h-10 w-10 object-cover rounded-lg mr-3"
+                  />
+                ) : (
+                  <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                    <FaCar className="text-blue-600" />
+                  </div>
+                )}
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{vehicle.marque} {vehicle.modele}</div>
                   <div className="text-sm text-gray-500">{vehicle.typeVehicule}</div>
@@ -856,6 +854,7 @@ const VehiclesView = ({ vehicles, loading, onAdd, onEdit, onDelete, onRefresh })
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -864,9 +863,17 @@ const VehiclesView = ({ vehicles, loading, onAdd, onEdit, onDelete, onRefresh })
               <tr key={vehicle.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                      <FaCar className="text-blue-600" />
-                    </div>
+                    {vehicle.imageUrl ? (
+                      <img 
+                        src={vehicle.imageUrl} 
+                        alt={vehicle.marque}
+                        className="h-10 w-10 object-cover rounded-lg mr-3"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <FaCar className="text-blue-600" />
+                      </div>
+                    )}
                     <div>
                       <div className="font-medium text-gray-900">{vehicle.marque}</div>
                       <div className="text-sm text-gray-500">{vehicle.modele || vehicle.nom}</div>
@@ -874,9 +881,14 @@ const VehiclesView = ({ vehicles, loading, onAdd, onEdit, onDelete, onRefresh })
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                    {vehicle.typeVehicule}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                      {vehicle.typeVehicule}
+                    </span>
+                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                      {vehicle.typeCarburant || 'ESSENCE'}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="font-bold text-gray-900">
@@ -897,6 +909,18 @@ const VehiclesView = ({ vehicles, loading, onAdd, onEdit, onDelete, onRefresh })
                   }`}>
                     {vehicle.quantite > 0 ? 'En stock' : 'Rupture'}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center">
+                    {vehicle.images && vehicle.images.length > 0 ? (
+                      <div className="flex items-center gap-1">
+                        <FaImage className="text-blue-500" />
+                        <span className="text-sm text-gray-600">{vehicle.images.length}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Aucune</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
@@ -1279,8 +1303,8 @@ const AnalyticsView = ({ stats, orders, vehicles, users }) => {
   )
 }
 
-// Vehicle Form Modal Component
-const VehicleFormModal = ({ vehicle, onClose, onSave }) => {
+// Vehicle Form Modal avec upload d'images - VERSION COMPLÈTE ET FONCTIONNELLE
+const VehicleFormWithImagesModal = ({ vehicle, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     marque: '',
     modele: '',
@@ -1290,68 +1314,990 @@ const VehicleFormModal = ({ vehicle, onClose, onSave }) => {
     couleur: '#3B82F6',
     quantite: '1',
     enSolde: false,
-    pourcentageSolde: ''
+    pourcentageSolde: '',
+    
+    // Champs automobiles
+    nombrePortes: '4',
+    nombrePlaces: '5',
+    puissance: '100',
+    transmission: 'AUTOMATIQUE',
+    consommation: '6.5',
+    carburant: 'ESSENCE',
+    autonomie: '600',
+    
+    // Champs scooters
+    cylindree: '125',
+    categoriePermis: 'A',
+    
+    // Champs électriques
+    tempsCharge: '30',
+    tempsChargeRapide: '30',
+    typeBatterie: 'LITHIUM_ION',
+    typeChargeur: 'TYPE2'
   })
   
   const [loading, setLoading] = useState(false)
-  
+  const [formStep, setFormStep] = useState(1)
+  const [selectedImages, setSelectedImages] = useState([])
+  const [previewUrls, setPreviewUrls] = useState([])
+  const [existingImages, setExistingImages] = useState([])
+
+  // Initialisation
   useEffect(() => {
     if (vehicle) {
       setFormData({
         marque: vehicle.marque || '',
         modele: vehicle.modele || vehicle.nom || '',
-        prix: vehicle.prix || '',
+        prix: vehicle.prix || vehicle.prixBase || '',
         typeVehicule: vehicle.typeVehicule || 'AUTOMOBILE',
         typeCarburant: vehicle.typeCarburant || 'ESSENCE',
         couleur: vehicle.couleur || '#3B82F6',
-        quantite: vehicle.quantite || '1',
+        quantite: vehicle.quantite?.toString() || '1',
         enSolde: vehicle.enSolde || false,
-        pourcentageSolde: vehicle.pourcentageSolde || ''
+        pourcentageSolde: vehicle.pourcentageSolde?.toString() || '',
+        
+        nombrePortes: vehicle.nombrePortes?.toString() || '4',
+        nombrePlaces: vehicle.nombrePlaces?.toString() || '5',
+        puissance: vehicle.puissance?.toString() || '100',
+        transmission: vehicle.transmission || 'AUTOMATIQUE',
+        consommation: vehicle.consommation?.toString() || '6.5',
+        carburant: vehicle.carburant || 'ESSENCE',
+        autonomie: vehicle.autonomie?.toString() || '600',
+        
+        cylindree: vehicle.cylindree?.toString() || '125',
+        categoriePermis: vehicle.categoriePermis || 'A',
+        
+        tempsCharge: vehicle.tempsCharge?.toString() || '30',
+        tempsChargeRapide: vehicle.tempsChargeRapide?.toString() || '30',
+        typeBatterie: vehicle.typeBatterie || 'LITHIUM_ION',
+        typeChargeur: vehicle.typeChargeur || 'TYPE2'
       })
+      
+      if (vehicle.images && vehicle.images.length > 0) {
+        setExistingImages(vehicle.images)
+      }
     }
   }, [vehicle])
+
+  // Nettoyer les URLs de prévisualisation
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [previewUrls])
+
+  // Gestion de la sélection d'images
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files)
+    
+    if (selectedImages.length + files.length > 10) {
+      toast.error('Maximum 10 images autorisées')
+      return
+    }
+    
+    const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      toast.error('Certains fichiers dépassent 5MB')
+      return
+    }
+    
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file))
+    
+    setSelectedImages(prev => [...prev, ...files])
+    setPreviewUrls(prev => [...prev, ...newPreviewUrls])
+    
+    toast.success(`${files.length} image(s) sélectionnée(s)`)
+  }
+
+  // Supprimer une image sélectionnée
+  const removeSelectedImage = (index) => {
+    URL.revokeObjectURL(previewUrls[index])
+    
+    setSelectedImages(prev => prev.filter((_, i) => i !== index))
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Supprimer une image existante
+  const removeExistingImage = async (imageId) => {
+    if (vehicle) {
+      try {
+        await adminService.deleteVehiculeImage(imageId)
+        setExistingImages(prev => prev.filter(img => img.id !== imageId))
+        toast.success('Image supprimée')
+      } catch (error) {
+        toast.error('Erreur lors de la suppression')
+      }
+    }
+  }
+
+  // Définir une image comme principale
+  const setAsMainImage = async (imageId) => {
+    if (vehicle) {
+      try {
+        await adminService.setImageAsMain(imageId)
+        setExistingImages(prev => 
+          prev.map(img => ({
+            ...img,
+            isMain: img.id === imageId
+          }))
+        )
+        toast.success('Image définie comme principale')
+      } catch (error) {
+        toast.error('Erreur lors de la mise à jour')
+      }
+    }
+  }
+
+  // Validation du formulaire
+  const validateForm = () => {
+    const errors = []
+    
+    if (!formData.marque.trim()) errors.push('La marque est requise')
+    if (!formData.modele.trim()) errors.push('Le modèle est requis')
+    if (!formData.prix || parseFloat(formData.prix) <= 0) errors.push('Le prix doit être supérieur à 0')
+    if (!formData.quantite || parseInt(formData.quantite) < 1) errors.push('La quantité doit être au moins 1')
+    
+    return errors
+  }
+
+  // Préparation des données pour le backend
+  const prepareDataForBackend = () => {
+    const backendData = {
+      marque: formData.marque.trim(),
+      modele: formData.modele.trim(),
+      prix: parseFloat(formData.prix),
+      typeVehicule: formData.typeVehicule,
+      typeCarburant: formData.typeCarburant,
+      couleur: formData.couleur,
+      quantite: parseInt(formData.quantite),
+      enSolde: formData.enSolde,
+      pourcentageSolde: formData.enSolde && formData.pourcentageSolde 
+        ? parseFloat(formData.pourcentageSolde) 
+        : null,
+      dateStock: new Date().toISOString().split('T')[0]
+    }
   
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (formData.typeVehicule === 'AUTOMOBILE') {
+      backendData.nombrePortes = parseInt(formData.nombrePortes)
+      backendData.nombrePlaces = parseInt(formData.nombrePlaces)
+      backendData.puissance = parseInt(formData.puissance)
+      backendData.transmission = formData.transmission
+      
+      if (formData.typeCarburant === 'ESSENCE' || formData.typeCarburant === 'DIESEL' || formData.typeCarburant === 'HYBRIDE') {
+        backendData.consommation = parseFloat(formData.consommation)
+        backendData.carburant = formData.carburant
+        backendData.autonomie = parseInt(formData.autonomie)
+      } else if (formData.typeCarburant === 'ELECTRIQUE') {
+        backendData.autonomie = parseInt(formData.autonomie)
+        backendData.tempsChargeRapide = parseInt(formData.tempsChargeRapide)
+        backendData.typeChargeur = formData.typeChargeur
+      }
+    } else if (formData.typeVehicule === 'SCOOTER') {
+      backendData.cylindree = parseInt(formData.cylindree)
+      backendData.categoriePermis = formData.categoriePermis
+      
+      if (formData.typeCarburant === 'ESSENCE' || formData.typeCarburant === 'DIESEL') {
+        backendData.consommation = parseFloat(formData.consommation)
+        backendData.carburant = formData.carburant
+        backendData.autonomie = parseInt(formData.autonomie)
+      } else if (formData.typeCarburant === 'ELECTRIQUE') {
+        backendData.autonomie = parseInt(formData.autonomie)
+        backendData.tempsCharge = parseInt(formData.tempsCharge)
+        backendData.typeBatterie = formData.typeBatterie
+      }
+    }
+  
+    return backendData
+  }
+
+  // Création ou mise à jour du véhicule avec images
+  const handleCreateOrUpdateVehicle = async () => {
+    const errors = validateForm()
+    if (errors.length > 0) {
+      errors.forEach(error => toast.error(error))
+      return false
+    }
+    
     setLoading(true)
     
     try {
-      const vehicleData = {
-        marque: formData.marque,
-        modele: formData.modele,
-        prix: parseFloat(formData.prix),
-        typeVehicule: formData.typeVehicule,
-        typeCarburant: formData.typeCarburant,
-        couleur: formData.couleur,
-        quantite: parseInt(formData.quantite),
-        enSolde: formData.enSolde,
-        pourcentageSolde: formData.enSolde && formData.pourcentageSolde ? parseFloat(formData.pourcentageSolde) : null
-      }
+      // 1. Préparer les données du véhicule
+      const vehicleData = prepareDataForBackend()
+      console.log('📤 Envoi des données véhicule:', vehicleData)
       
+      let vehicleId
+      let response
+      
+      // 2. Créer ou mettre à jour le véhicule
       if (vehicle) {
-        await adminService.updateVehicule(vehicle.id, vehicleData)
-        toast.success('Véhicule mis à jour avec succès')
+        response = await adminService.updateVehicule(vehicle.id, vehicleData)
+        vehicleId = vehicle.id
+        toast.success('✅ Véhicule mis à jour avec succès')
       } else {
-        await adminService.createVehicule(vehicleData)
-        toast.success('Véhicule créé avec succès')
+        response = await adminService.createVehicule(vehicleData)
+        vehicleId = response.id
+        toast.success('✅ Véhicule créé avec succès')
       }
       
-      onSave()
+      console.log('📥 Réponse création véhicule:', response)
+      
+      // 3. Uploader les images sélectionnées
+      if (selectedImages.length > 0) {
+        toast.success(`📸 Upload de ${selectedImages.length} image(s)...`)
+        
+        const uploadPromises = selectedImages.map(async (file, index) => {
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('isMain', index === 0 && existingImages.length === 0)
+          
+          return await adminService.uploadVehiculeImage(vehicleId, formData)
+        })
+        
+        await Promise.all(uploadPromises)
+        toast.success('✅ Toutes les images ont été uploadées')
+      }
+      
+      // 4. Nettoyer les prévisualisations
+      previewUrls.forEach(url => URL.revokeObjectURL(url))
+      
+      // 5. Appeler le callback de sauvegarde
+      if (onSave) {
+        onSave()
+      }
+      
+      return true
+      
     } catch (error) {
-      toast.error(error.message || 'Erreur lors de la sauvegarde')
+      console.error('❌ Erreur création véhicule:', error)
+      
+      let errorMessage = 'Erreur lors de la sauvegarde'
+      if (error.response?.data) {
+        console.error('📄 Détails erreur backend:', error.response.data)
+        if (error.response.data.error) errorMessage = error.response.data.error
+        else if (error.response.data.message) errorMessage = error.response.data.message
+      }
+      
+      toast.error(`❌ ${errorMessage}`)
+      return false
     } finally {
       setLoading(false)
     }
   }
-  
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (formStep < 3) {
+      setFormStep(formStep + 1)
+      return
+    }
+    
+    await handleCreateOrUpdateVehicle()
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+
+  const renderStepContent = () => {
+    switch (formStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type de véhicule *
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, typeVehicule: 'AUTOMOBILE'})}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border ${
+                      formData.typeVehicule === 'AUTOMOBILE'
+                        ? 'bg-blue-100 border-blue-500 text-blue-700'
+                        : 'bg-gray-100 border-gray-300 text-gray-700'
+                    }`}
+                  >
+                    <FaCar />
+                    Automobile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, typeVehicule: 'SCOOTER'})}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border ${
+                      formData.typeVehicule === 'SCOOTER'
+                        ? 'bg-blue-100 border-blue-500 text-blue-700'
+                        : 'bg-gray-100 border-gray-300 text-gray-700'
+                    }`}
+                  >
+                    <FaMotorcycle />
+                    Scooter
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type d'énergie *
+                </label>
+                <select
+                  name="typeCarburant"
+                  value={formData.typeCarburant}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  required
+                >
+                  <option value="ESSENCE">Essence</option>
+                  <option value="ELECTRIQUE">Électrique</option>
+                  <option value="HYBRIDE">Hybride</option>
+                  <option value="DIESEL">Diesel</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Marque *
+                </label>
+                <input
+                  type="text"
+                  name="marque"
+                  value={formData.marque}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  required
+                  placeholder="Ex: Toyota, Peugeot..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Modèle *
+                </label>
+                <input
+                  type="text"
+                  name="modele"
+                  value={formData.modele}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  required
+                  placeholder="Ex: Corolla, 208..."
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Prix (FCFA) *
+                </label>
+                <input
+                  type="number"
+                  name="prix"
+                  value={formData.prix}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  required
+                  min="0"
+                  step="1000"
+                  placeholder="Ex: 15000000"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantité en stock *
+                </label>
+                <input
+                  type="number"
+                  name="quantite"
+                  value={formData.quantite}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  required
+                  min="1"
+                  placeholder="Ex: 5"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FaPalette className="inline mr-2" />
+                Couleur
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="couleur"
+                  value={formData.couleur}
+                  onChange={handleInputChange}
+                  className="h-10 w-10 cursor-pointer rounded"
+                />
+                <input
+                  type="text"
+                  name="couleur"
+                  value={formData.couleur}
+                  onChange={handleInputChange}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5"
+                  placeholder="#3B82F6"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="enSolde"
+                name="enSolde"
+                checked={formData.enSolde}
+                onChange={handleInputChange}
+                className="h-5 w-5"
+              />
+              <label htmlFor="enSolde" className="text-sm font-medium text-gray-700">
+                <FaPercent className="inline mr-2" />
+                Mettre en promotion
+              </label>
+            </div>
+            
+            {formData.enSolde && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pourcentage de réduction
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    name="pourcentageSolde"
+                    value={formData.pourcentageSolde}
+                    onChange={handleInputChange}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="Ex: 15.5"
+                  />
+                  <span className="text-gray-500">%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      
+      case 2:
+        return formData.typeVehicule === 'AUTOMOBILE' 
+          ? (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                Caractéristiques de l'automobile
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de portes
+                  </label>
+                  <select
+                    name="nombrePortes"
+                    value={formData.nombrePortes}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  >
+                    <option value="2">2 portes</option>
+                    <option value="3">3 portes</option>
+                    <option value="4">4 portes</option>
+                    <option value="5">5 portes</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de places
+                  </label>
+                  <select
+                    name="nombrePlaces"
+                    value={formData.nombrePlaces}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  >
+                    <option value="2">2 places</option>
+                    <option value="4">4 places</option>
+                    <option value="5">5 places</option>
+                    <option value="7">7 places</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Puissance (ch)
+                  </label>
+                  <input
+                    type="number"
+                    name="puissance"
+                    value={formData.puissance}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                    min="50"
+                    step="10"
+                    placeholder="Ex: 100"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transmission
+                  </label>
+                  <select
+                    name="transmission"
+                    value={formData.transmission}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  >
+                    <option value="MANUELLE">Manuelle</option>
+                    <option value="AUTOMATIQUE">Automatique</option>
+                  </select>
+                </div>
+              </div>
+              
+              {(formData.typeCarburant === 'ESSENCE' || formData.typeCarburant === 'DIESEL' || formData.typeCarburant === 'HYBRIDE') && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Consommation (L/100km)
+                      </label>
+                      <input
+                        type="number"
+                        name="consommation"
+                        value={formData.consommation}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                        min="0"
+                        step="0.1"
+                        placeholder="Ex: 6.5"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Autonomie (km)
+                      </label>
+                      <input
+                        type="number"
+                        name="autonomie"
+                        value={formData.autonomie}
+                        onChange={handleInputChange}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                        min="100"
+                        step="50"
+                        placeholder="Ex: 600"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de carburant
+                    </label>
+                    <select
+                      name="carburant"
+                      value={formData.carburant}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                    >
+                      <option value="ESSENCE">Essence</option>
+                      <option value="DIESEL">Diesel</option>
+                      <option value="HYBRIDE">Hybride</option>
+                    </select>
+                  </div>
+                </>
+              )}
+              
+              {formData.typeCarburant === 'ELECTRIQUE' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Autonomie (km)
+                    </label>
+                    <input
+                      type="number"
+                      name="autonomie"
+                      value={formData.autonomie}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="100"
+                      step="50"
+                      placeholder="Ex: 400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Temps charge rapide (min)
+                    </label>
+                    <input
+                      type="number"
+                      name="tempsChargeRapide"
+                      value={formData.tempsChargeRapide}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="10"
+                      step="5"
+                      placeholder="Ex: 30"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de chargeur
+                    </label>
+                    <select
+                      name="typeChargeur"
+                      value={formData.typeChargeur}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                    >
+                      <option value="TYPE1">Type 1</option>
+                      <option value="TYPE2">Type 2</option>
+                      <option value="CCS">CCS</option>
+                      <option value="CHADEMO">CHAdeMO</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+          : (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                Caractéristiques du scooter
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cylindrée (cc)
+                  </label>
+                  <select
+                    name="cylindree"
+                    value={formData.cylindree}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  >
+                    <option value="50">50cc</option>
+                    <option value="125">125cc</option>
+                    <option value="250">250cc</option>
+                    <option value="300">300cc</option>
+                    <option value="500">500cc</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Catégorie permis
+                  </label>
+                  <select
+                    name="categoriePermis"
+                    value={formData.categoriePermis}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                  >
+                    <option value="AM">AM (50cc)</option>
+                    <option value="A1">A1 (125cc)</option>
+                    <option value="A2">A2 (≤35kW)</option>
+                    <option value="A">A (Toutes)</option>
+                  </select>
+                </div>
+              </div>
+              
+              {(formData.typeCarburant === 'ESSENCE' || formData.typeCarburant === 'DIESEL') && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Consommation (L/100km)
+                    </label>
+                    <input
+                      type="number"
+                      name="consommation"
+                      value={formData.consommation}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="0"
+                      step="0.1"
+                      placeholder="Ex: 2.5"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Autonomie (km)
+                    </label>
+                    <input
+                      type="number"
+                      name="autonomie"
+                      value={formData.autonomie}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="100"
+                      step="50"
+                      placeholder="Ex: 250"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de carburant
+                    </label>
+                    <select
+                      name="carburant"
+                      value={formData.carburant}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                    >
+                      <option value="ESSENCE">Essence</option>
+                      <option value="DIESEL">Diesel</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              
+              {formData.typeCarburant === 'ELECTRIQUE' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Autonomie (km)
+                    </label>
+                    <input
+                      type="number"
+                      name="autonomie"
+                      value={formData.autonomie}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="50"
+                      step="10"
+                      placeholder="Ex: 100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Temps charge (min)
+                    </label>
+                    <input
+                      type="number"
+                      name="tempsCharge"
+                      value={formData.tempsCharge}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                      min="30"
+                      step="15"
+                      placeholder="Ex: 120"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de batterie
+                    </label>
+                    <select
+                      name="typeBatterie"
+                      value={formData.typeBatterie}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5"
+                    >
+                      <option value="LITHIUM_ION">Lithium-ion</option>
+                      <option value="PLOMB">Plomb</option>
+                      <option value="NIMH">NiMH</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+      
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <FaImages className="inline mr-2" />
+                Images du véhicule
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Ajoutez des photos de haute qualité pour présenter votre véhicule. 
+                Vous pouvez sélectionner jusqu'à 10 images.
+              </p>
+            </div>
+            
+            {/* Zone d'upload */}
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
+              <div className="max-w-md mx-auto">
+                <FaCloudUploadAlt className="text-4xl text-gray-400 mx-auto mb-4" />
+                <h4 className="font-medium text-gray-900 mb-2">Sélectionnez vos images</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Formats supportés: JPG, PNG, WebP (Max 5MB par image)
+                </p>
+                
+                <label className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                  <FaUpload />
+                  Parcourir les fichiers
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                    disabled={loading}
+                  />
+                </label>
+                
+                <p className="text-sm text-gray-500 mt-3">
+                  {selectedImages.length} image(s) sélectionnée(s)
+                </p>
+              </div>
+            </div>
+            
+            {/* Prévisualisation des nouvelles images */}
+            {selectedImages.length > 0 && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Images à uploader ({selectedImages.length})
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {selectedImages.map((file, index) => (
+                    <div key={index} className="relative group">
+                      <div className={`relative overflow-hidden rounded-lg border ${index === 0 && existingImages.length === 0 ? 'border-blue-500 border-2' : 'border-gray-200'}`}>
+                        <img
+                          src={previewUrls[index]}
+                          alt={file.name}
+                          className="w-full h-32 object-cover"
+                        />
+                        {index === 0 && existingImages.length === 0 && (
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                            Principale
+                          </div>
+                        )}
+                        
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Supprimer"
+                        >
+                          <FaTrash className="text-xs" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-1">{file.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Images existantes */}
+            {existingImages.length > 0 && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Images existantes ({existingImages.length})
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {existingImages.map((image) => (
+                    <div key={image.id} className="relative group">
+                      <div className={`relative overflow-hidden rounded-lg border-2 ${
+                        image.isMain ? 'border-blue-500' : 'border-gray-200'
+                      }`}>
+                        <img
+                          src={image.fileUrl || image.thumbnailUrl}
+                          alt={image.fileName}
+                          className="w-full h-32 object-cover"
+                        />
+                        {image.isMain && (
+                          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                            Principale
+                          </div>
+                        )}
+                        
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="flex gap-2">
+                            {!image.isMain && (
+                              <button
+                                type="button"
+                                onClick={() => setAsMainImage(image.id)}
+                                className="bg-white p-2 rounded-full hover:bg-gray-100"
+                                title="Définir comme principale"
+                              >
+                                <FaStar className="text-amber-500" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeExistingImage(image.id)}
+                              className="bg-white p-2 rounded-full hover:bg-gray-100"
+                              title="Supprimer"
+                            >
+                              <FaTrash className="text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-1">{image.fileName}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedImages.length === 0 && existingImages.length === 0 && !vehicle && (
+              <div className="text-center py-4 bg-amber-50 rounded-lg border border-amber-200">
+                <FaExclamationCircle className="text-amber-500 inline-block mr-2" />
+                <span className="text-amber-700">
+                  Aucune image sélectionnée. Vous pourrez en ajouter plus tard dans l'édition.
+                </span>
+              </div>
+            )}
+          </div>
+        )
+      
+      default:
+        return null
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">
-              {vehicle ? 'Modifier' : 'Ajouter'} un véhicule
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                {vehicle ? 'Modifier' : 'Ajouter'} un véhicule
+              </h2>
+              <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                {[1, 2, 3].map((step) => (
+                  <React.Fragment key={step}>
+                    {step > 1 && <span>→</span>}
+                    <span className={`px-2 py-1 rounded ${
+                      formStep === step 
+                        ? 'bg-blue-100 text-blue-800 font-medium' 
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      Étape {step}: {step === 1 ? 'Infos' : step === 2 ? 'Caract.' : 'Images'}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
             <button 
               onClick={onClose} 
               className="text-gray-500 hover:text-gray-700 p-1"
@@ -1362,157 +2308,52 @@ const VehicleFormModal = ({ vehicle, onClose, onSave }) => {
           </div>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Marque *</label>
-            <input
-              type="text"
-              value={formData.marque}
-              onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              required
-              disabled={loading}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {renderStepContent()}
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Modèle *</label>
-            <input
-              type="text"
-              value={formData.modele}
-              onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              required
-              disabled={loading}
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
-              <select
-                value={formData.typeVehicule}
-                onChange={(e) => setFormData({ ...formData, typeVehicule: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          <div className="flex justify-between pt-6 border-t border-gray-200">
+            {formStep > 1 && (
+              <button
+                type="button"
+                onClick={() => setFormStep(formStep - 1)}
                 disabled={loading}
+                className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
-                <option value="AUTOMOBILE">Automobile</option>
-                <option value="SCOOTER">Scooter</option>
-              </select>
-            </div>
+                ← Précédent
+              </button>
+            )}
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Énergie *</label>
-              <select
-                value={formData.typeCarburant}
-                onChange={(e) => setFormData({ ...formData, typeCarburant: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                disabled={loading}
-              >
-                <option value="ESSENCE">Essence</option>
-                <option value="ELECTRIQUE">Électrique</option>
-                <option value="HYBRIDE">Hybride</option>
-              </select>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
-            <input
-              type="number"
-              value={formData.prix}
-              onChange={(e) => setFormData({ ...formData, prix: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              required
-              disabled={loading}
-              min="0"
-              step="1000"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantité *</label>
-              <input
-                type="number"
-                value={formData.quantite}
-                onChange={(e) => setFormData({ ...formData, quantite: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                required
-                disabled={loading}
-                min="1"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Couleur</label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={formData.couleur}
-                  onChange={(e) => setFormData({ ...formData, couleur: e.target.value })}
-                  className="h-10 w-10 cursor-pointer"
+            <div className="flex gap-4 ml-auto">
+              {formStep < 3 ? (
+                <button
+                  type="button"
+                  onClick={() => setFormStep(formStep + 1)}
                   disabled={loading}
-                />
-                <input
-                  type="text"
-                  value={formData.couleur}
-                  onChange={(e) => setFormData({ ...formData, couleur: e.target.value })}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  disabled={loading}
-                />
-              </div>
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  Suivant →
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setFormStep(2)}
+                    disabled={loading}
+                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    ← Retour
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {loading && <FaSpinner className="animate-spin" />}
+                    {vehicle ? 'Mettre à jour' : 'Créer'} le véhicule
+                  </button>
+                </>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="enSolde"
-              checked={formData.enSolde}
-              onChange={(e) => setFormData({ ...formData, enSolde: e.target.checked })}
-              className="h-5 w-5"
-              disabled={loading}
-            />
-            <label htmlFor="enSolde" className="text-sm font-medium text-gray-700">
-              Mettre en solde
-            </label>
-          </div>
-          
-          {formData.enSolde && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pourcentage de réduction</label>
-              <input
-                type="number"
-                value={formData.pourcentageSolde}
-                onChange={(e) => setFormData({ ...formData, pourcentageSolde: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                disabled={loading}
-                min="0"
-                max="100"
-                step="0.1"
-                placeholder="Ex: 15.5"
-              />
-            </div>
-          )}
-          
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {loading && <FaSpinner className="animate-spin" />}
-              {vehicle ? 'Modifier' : 'Créer'} le véhicule
-            </button>
           </div>
         </form>
       </div>
