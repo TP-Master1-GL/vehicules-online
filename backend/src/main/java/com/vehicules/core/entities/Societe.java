@@ -10,6 +10,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "societe")
+@PrimaryKeyJoinColumn(name = "client_id")  
+@DiscriminatorValue("Societe")   
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)

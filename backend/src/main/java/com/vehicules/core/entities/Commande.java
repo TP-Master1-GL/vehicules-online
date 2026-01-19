@@ -68,4 +68,24 @@ public abstract class Commande {
     public void preUpdate() {
         this.montantTotal = calculerMontantTotal();
     }
+
+    // Ajouter dans la classe Commande
+// GETTERS
+public Long getId() { return id; }
+public LocalDateTime getDateCreation() { return dateCreation; }
+public String getStatut() { return statut; }
+public BigDecimal getMontantTotal() { return montantTotal; }
+public Client getClient() { return client; }
+public List<LigneCommande> getLignes() { return lignes; }
+public String getPaysLivraison() { return paysLivraison; }
+
+// SETTERS
+public void setId(Long id) { this.id = id; }
+public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
+public void setStatut(String statut) { this.statut = statut; }
+public void setMontantTotal(BigDecimal montantTotal) { this.montantTotal = montantTotal; }
+public void setClient(Client client) { this.client = client; }
+public void setLignes(List<LigneCommande> lignes) { this.lignes = lignes; }
+public void setPaysLivraison(String paysLivraison) { this.paysLivraison = paysLivraison; }
+
 }

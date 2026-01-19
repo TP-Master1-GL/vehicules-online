@@ -9,10 +9,12 @@ import java.util.List;
 
 @Entity
 @Table(name = "client")
+@Inheritance(strategy = InheritanceType.JOINED)  // DOIT ÊTRE EN PREMIER
+@DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
 @Data
 @NoArgsConstructor
-@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Client {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

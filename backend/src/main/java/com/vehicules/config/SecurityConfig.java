@@ -43,17 +43,27 @@ public class SecurityConfig {
             // 1. Désactiver CSRF pour les API REST
             .csrf(AbstractHttpConfigurer::disable)
             
-            // 2. Configurer CORS
+            // 2. Configurer CORS - Gardez seulement SI vous supprimez WebConfig
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             
-            // 3. Configurer l'autorisation
+            // 3. Configurer l'autorisation - ORDRE IMPORTANT !
             .authorizeHttpRequests(authz -> authz
-                // Routes publiques - PAS besoin d'authentification
+                // Routes ADMIN en PREMIER (ordre spécifique → général)
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Routes MANAGER
+                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                
+                // Routes authentifiées
+                .requestMatchers("/api/commandes/**").authenticated()
+                
+                // Routes publiques - en DERNIER
                 .requestMatchers(
-                    "/**",
                     "/api/auth/**",
                     "/auth/**",
+                    "/api/setup/**",
                     "/api/test/**",
+                    "/api/debug/**",
                     "/api/catalogue/**", 
                     "/catalogue/**",
                     "/api/societe/**",
@@ -65,17 +75,33 @@ public class SecurityConfig {
                     "/api-docs/**",
                     "/h2-console/**",
                     "/error",
-                    "/favicon.ico"
+                    "/favicon.ico",
+                    // Static files pour React
+                    "/",
+                    "/index.html",
+                    "/static/**",
+                    "/assets/**",
+                    "/manifest.json",
+                    "/logo192.png",
+                    "/logo512.png"
                 ).permitAll()
                 
-                // Routes nécessitant une authentification
-                .requestMatchers("/api/commandes/**").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                // Pour React Router - permettez les routes frontend
+                .requestMatchers(
+                    "/login",
+                    "/register", 
+                    "/catalogue",
+                    "/vehicules/**",
+                    "/admin/**"
+                ).permitAll()
                 
-                // Toutes les autres routes nécessitent une authentification
-                .anyRequest().authenticated()
+                // Toutes les autres API nécessitent auth
+                .requestMatchers("/api/**").authenticated()
+                
+                // Tout le reste (fichiers statiques, React) est permis
+                .anyRequest().permitAll()
             )
+            
             
             // 4. Session stateless pour JWT
             .sessionManagement(session -> session
@@ -85,9 +111,6 @@ public class SecurityConfig {
             // 5. Ajouter le filtre JWT
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Pour H2 Console
-        http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
-
         return http.build();
     }
 
@@ -95,8 +118,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Autoriser toutes les origines en développement
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        // Spécifiez les origines exactes, pas "*" avec allowCredentials
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8080"
+        ));
         
         // Méthodes autorisées
         configuration.setAllowedMethods(Arrays.asList(
@@ -117,9 +144,8 @@ public class SecurityConfig {
         
         // Headers exposés
         configuration.setExposedHeaders(Arrays.asList(
-            "Access-Control-Allow-Origin",
-            "Access-Control-Allow-Credentials",
-            "Authorization"
+            "Authorization",
+            "Content-Disposition"
         ));
         
         // Autoriser les credentials

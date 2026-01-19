@@ -19,7 +19,7 @@ mvn clean compile -q
 
 # Démarrer le backend avec H2
 echo "▶️  Démarrage du backend sur le port 8080..."
-mvn spring-boot:run -Dspring-boot.run.profiles=h2 -Dserver.port=8080 > backend.log 2>&1 &
+mvn spring-boot:run  -DskipTests -Dserver.port=8080 > backend.log 2>&1 &
 
 # Attendre que le backend démarre
 echo "⏳ Attente du démarrage du backend..."

@@ -15,14 +15,18 @@ public class VehiculeImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "file_name", nullable = false)
+    @Column(name = "file_name")
     private String fileName;
     
-    @Column(name = "file_url", nullable = false, length = 500)
+    @Column(name = "file_url", length = 500)
     private String fileUrl;
     
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
+    
+    // CHANGEMENT: Utiliser Boolean au lieu de boolean
+    @Column(name = "is_main")
+    private Boolean isMain = false;
     
     @Column(name = "file_size")
     private Long fileSize;
@@ -30,21 +34,27 @@ public class VehiculeImage {
     @Column(name = "file_type")
     private String fileType;
     
-    @Column(name = "is_main")
-    private boolean isMain = false;
-    
-    @Column(name = "upload_order")
-    private Integer uploadOrder = 0;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicule_id", nullable = false)
-    private Vehicule vehicule;
-    
     @Column(name = "upload_date")
     private LocalDateTime uploadDate;
     
-    @PrePersist
-    protected void onCreate() {
-        uploadDate = LocalDateTime.now();
+    @Column(name = "upload_order")
+    private Integer uploadOrder;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicule_id")
+    private Vehicule vehicule;
+    
+    // CHANGEMENT: Ajouter explicitement getMain() et setMain() pour JPA
+    public Boolean getMain() {
+        return isMain;
+    }
+    
+    public void setMain(Boolean main) {
+        this.isMain = main;
+    }
+    
+    // Méthode utilitaire pour compatibilité
+    public boolean isMain() {
+        return Boolean.TRUE.equals(isMain);
     }
 }

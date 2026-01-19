@@ -19,4 +19,9 @@ public class CommandeDTO {
     private String typePaiement;
     private ClientDTO client;
     private List<LigneCommandeDTO> lignes;
+    
+    // Ajouter ces getters/setters si Lombok ne les génère pas
+    public void setTypePaiement(String typePaiement) {
+        this.typePaiement = typePaiement;
+    }
 }

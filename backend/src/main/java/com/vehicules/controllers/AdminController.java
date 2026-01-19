@@ -1,12 +1,14 @@
 package com.vehicules.controllers;
 
 import com.vehicules.api.dto.VehiculeDTO;
+import com.vehicules.api.dto.VehiculeImageDTO;
 import com.vehicules.core.entities.*;
 import com.vehicules.core.enums.Role;
 import com.vehicules.repositories.*;
 import com.vehicules.services.CatalogueService;
 import com.vehicules.services.VehicleDisplayService;
 import com.vehicules.services.VehiculeImageService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,9 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
@@ -49,13 +53,23 @@ public class AdminController {
     
     @GetMapping("/test")
     public ResponseEntity<?> testAdminEndpoint() {
-        System.out.println("✅ [ADMIN CONTROLLER] Test endpoint appelé");
+        log.info("✅ [ADMIN CONTROLLER] Test endpoint appelé");
         return ResponseEntity.ok(Map.of(
             "status", "OK",
             "message", "Admin controller fonctionnel",
             "endpoint", "/api/admin",
             "timestamp", new Date().toString(),
             "javaVersion", System.getProperty("java.version")
+        ));
+    }
+
+    @GetMapping("/test-auth")
+    public ResponseEntity<?> testAuth() {
+        return ResponseEntity.ok(Map.of(
+            "status", "OK",
+            "message", "Authentification admin réussie",
+            "role", "ADMIN",
+            "timestamp", LocalDateTime.now().toString()
         ));
     }
 
@@ -67,21 +81,26 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "true") boolean actif) {
         
         try {
-            List<Client> utilisateurs;
+            log.info("👥 [ADMIN] Récupération utilisateurs - Role: {}, Actif: {}", role, actif);
+            
+            List<Client> utilisateurs = clientRepository.findAll();
 
+            List<Client> filtered;
             if (role != null) {
-                utilisateurs = clientRepository.findAll().stream()
+                filtered = utilisateurs.stream()
                         .filter(u -> u.getRole() == role && isClientEnabled(u) == actif)
-                        .toList();
+                        .collect(Collectors.toList());
             } else {
-                utilisateurs = clientRepository.findAll().stream()
+                filtered = utilisateurs.stream()
                         .filter(u -> isClientEnabled(u) == actif)
-                        .toList();
+                        .collect(Collectors.toList());
             }
 
-            return ResponseEntity.ok(utilisateurs);
+            log.info("✅ [ADMIN] {} utilisateurs récupérés", filtered.size());
+            return ResponseEntity.ok(filtered);
             
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur récupération utilisateurs: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération utilisateurs: " + e.getMessage()));
         }
@@ -92,45 +111,41 @@ public class AdminController {
     @GetMapping("/vehicules")
     public ResponseEntity<?> getAllVehicules() {
         try {
+            log.info("🚗 [ADMIN] Récupération de tous les véhicules");
+            
             List<VehiculeDTO> vehicules = catalogueService.getCatalogueUneLigne();
             
             // Enrichir les DTO avec les images
             for (VehiculeDTO dto : vehicules) {
                 if (dto.getId() != null) {
-                    List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(dto.getId());
-                    if (!images.isEmpty()) {
-                        // Trouver l'image principale
-                        Optional<VehiculeImage> mainImage = images.stream()
-                                .filter(VehiculeImage::isMain)
-                                .findFirst();
-                        
-                        if (mainImage.isPresent()) {
-                            dto.setImageUrl(mainImage.get().getFileUrl());
-                            dto.setImageThumbnailUrl(mainImage.get().getThumbnailUrl());
+                    try {
+                        List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(dto.getId());
+                        if (!images.isEmpty()) {
+                            // Trouver l'image principale
+                            Optional<VehiculeImage> mainImage = images.stream()
+                                    .filter(VehiculeImage::isMain)
+                                    .findFirst();
+                            
+                            if (mainImage.isPresent()) {
+                                dto.setImageUrl(mainImage.get().getFileUrl());
+                                dto.setImageThumbnailUrl(mainImage.get().getThumbnailUrl());
+                            }
+                            
+                            // Convertir les images en DTOs
+                            List<VehiculeImageDTO> imageDTOs = convertImageEntitiesToDTOs(images);
+                            dto.setImages(imageDTOs);
                         }
-                        
-                        // Convertir les images en format pour le frontend
-                        List<Map<String, Object>> imageList = new ArrayList<>();
-                        for (VehiculeImage img : images) {
-                            Map<String, Object> imageMap = new HashMap<>();
-                            imageMap.put("id", img.getId());
-                            imageMap.put("fileName", img.getFileName());
-                            imageMap.put("fileUrl", img.getFileUrl());
-                            imageMap.put("thumbnailUrl", img.getThumbnailUrl());
-                            imageMap.put("isMain", img.isMain());
-                            imageMap.put("fileSize", img.getFileSize());
-                            imageMap.put("fileType", img.getFileType());
-                            imageList.add(imageMap);
-                        }
-                        
-                        dto.setImages(imageList);
+                    } catch (Exception e) {
+                        log.warn("⚠️ [ADMIN] Erreur récupération images véhicule {}: {}", dto.getId(), e.getMessage());
                     }
                 }
             }
             
+            log.info("✅ [ADMIN] {} véhicules récupérés", vehicules.size());
             return ResponseEntity.ok(vehicules);
             
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur récupération véhicules: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération véhicules: " + e.getMessage()));
         }
@@ -139,29 +154,18 @@ public class AdminController {
     @GetMapping("/vehicules/{id}")
     public ResponseEntity<?> getVehiculeById(@PathVariable Long id) {
         try {
+            log.info("🔍 [ADMIN] Récupération véhicule ID: {}", id);
+            
             VehiculeDTO vehicule = catalogueService.getVehiculeById(id);
             if (vehicule == null) {
+                log.warn("⚠️ [ADMIN] Véhicule non trouvé ID: {}", id);
                 return ResponseEntity.notFound().build();
             }
             
             // Récupérer les images
             List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(id);
-            List<Map<String, Object>> imageList = new ArrayList<>();
-            
-            for (VehiculeImage img : images) {
-                Map<String, Object> imageMap = new HashMap<>();
-                imageMap.put("id", img.getId());
-                imageMap.put("fileName", img.getFileName());
-                imageMap.put("fileUrl", img.getFileUrl());
-                imageMap.put("thumbnailUrl", img.getThumbnailUrl());
-                imageMap.put("isMain", img.isMain());
-                imageMap.put("fileSize", img.getFileSize());
-                imageMap.put("fileType", img.getFileType());
-                imageMap.put("uploadDate", img.getUploadDate());
-                imageList.add(imageMap);
-            }
-            
-            vehicule.setImages(imageList);
+            List<VehiculeImageDTO> imageDTOs = convertImageEntitiesToDTOs(images);
+            vehicule.setImages(imageDTOs);
             
             // Trouver l'image principale
             Optional<VehiculeImage> mainImage = images.stream()
@@ -173,9 +177,11 @@ public class AdminController {
                 vehicule.setImageThumbnailUrl(mainImage.get().getThumbnailUrl());
             }
             
+            log.info("✅ [ADMIN] Véhicule ID {} récupéré avec {} images", id, images.size());
             return ResponseEntity.ok(vehicule);
             
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur récupération véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération véhicule: " + e.getMessage()));
         }
@@ -184,19 +190,18 @@ public class AdminController {
     @PostMapping("/vehicules")
     public ResponseEntity<?> createVehicule(@RequestBody Map<String, Object> vehiculeData) {
         try {
-            System.out.println("📥 [ADMIN] Données reçues création véhicule: " + vehiculeData);
+            log.info("📥 [ADMIN] Données reçues création véhicule: {}", vehiculeData);
             
             Vehicule vehicule = convertMapToVehiculeEntity(vehiculeData, null);
             Vehicule saved = vehiculeRepository.save(vehicule);
             
-            System.out.println("✅ [ADMIN] Véhicule créé avec ID: " + saved.getId());
+            log.info("✅ [ADMIN] Véhicule créé avec ID: {}", saved.getId());
             
             VehiculeDTO dto = convertToDTO(saved);
             return ResponseEntity.ok(dto);
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur création véhicule: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ [ADMIN] Erreur création véhicule: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur création véhicule: " + e.getMessage()));
         }
@@ -205,7 +210,7 @@ public class AdminController {
     @PutMapping("/vehicules/{id}")
     public ResponseEntity<?> updateVehicule(@PathVariable Long id, @RequestBody Map<String, Object> vehiculeData) {
         try {
-            System.out.println("📥 [ADMIN] Données reçues modification véhicule ID " + id + ": " + vehiculeData);
+            log.info("📥 [ADMIN] Données reçues modification véhicule ID {}: {}", id, vehiculeData);
             
             Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
             if (vehiculeOpt.isPresent()) {
@@ -213,17 +218,17 @@ public class AdminController {
                 Vehicule updatedVehicule = convertMapToVehiculeEntity(vehiculeData, existingVehicule);
                 Vehicule saved = vehiculeRepository.save(updatedVehicule);
                 
-                System.out.println("✅ [ADMIN] Véhicule modifié avec succès");
+                log.info("✅ [ADMIN] Véhicule ID {} modifié avec succès", id);
                 
                 VehiculeDTO dto = convertToDTO(saved);
                 return ResponseEntity.ok(dto);
             }
             
+            log.warn("⚠️ [ADMIN] Véhicule non trouvé ID: {}", id);
             return ResponseEntity.notFound().build();
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur modification véhicule: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ [ADMIN] Erreur modification véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur modification véhicule: " + e.getMessage()));
         }
@@ -232,15 +237,23 @@ public class AdminController {
     @DeleteMapping("/vehicules/{id}")
     public ResponseEntity<?> deleteVehicule(@PathVariable Long id) {
         try {
+            log.info("🗑️ [ADMIN] Suppression véhicule ID: {}", id);
+            
             if (vehiculeRepository.existsById(id)) {
                 // Supprimer d'abord les images
                 vehiculeImageService.deleteAllVehiculeImages(id);
                 // Puis supprimer le véhicule
                 vehiculeRepository.deleteById(id);
+                
+                log.info("✅ [ADMIN] Véhicule ID {} supprimé", id);
                 return ResponseEntity.ok().build();
             }
+            
+            log.warn("⚠️ [ADMIN] Véhicule non trouvé ID: {}", id);
             return ResponseEntity.notFound().build();
+            
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur suppression véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur suppression véhicule: " + e.getMessage()));
         }
@@ -249,6 +262,8 @@ public class AdminController {
     @PutMapping("/vehicules/{id}/solde")
     public ResponseEntity<?> mettreEnSolde(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         try {
+            log.info("🏷️ [ADMIN] Mise en solde véhicule ID: {}", id);
+            
             Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
             if (vehiculeOpt.isPresent()) {
                 Vehicule vehicule = vehiculeOpt.get();
@@ -273,10 +288,16 @@ public class AdminController {
                 
                 Vehicule updated = vehiculeRepository.save(vehicule);
                 VehiculeDTO dto = convertToDTO(updated);
+                
+                log.info("✅ [ADMIN] Véhicule ID {} mis en solde", id);
                 return ResponseEntity.ok(dto);
             }
+            
+            log.warn("⚠️ [ADMIN] Véhicule non trouvé ID: {}", id);
             return ResponseEntity.notFound().build();
+            
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur mise en solde véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur mise en solde: " + e.getMessage()));
         }
@@ -291,11 +312,24 @@ public class AdminController {
             @RequestParam(value = "isMain", defaultValue = "false") boolean isMain) {
         
         try {
-            System.out.println("📷 [ADMIN] Upload image pour véhicule ID " + id);
-            System.out.println("📷 Nom du fichier: " + file.getOriginalFilename());
-            System.out.println("📷 Taille: " + file.getSize() + " bytes");
-            System.out.println("📷 Type: " + file.getContentType());
-            System.out.println("📷 Est principale: " + isMain);
+            log.info("📷 [ADMIN] Upload image pour véhicule ID {} - Fichier: {}, Taille: {}", 
+                     id, file.getOriginalFilename(), file.getSize());
+            
+            // VÉRIFICATION: S'assurer que le fichier n'est pas null
+            if (file == null || file.isEmpty()) {
+                log.error("❌ [ADMIN] Fichier manquant ou vide");
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                            "success", false,
+                            "message", "Le fichier est requis",
+                            "error", "FILE_EMPTY"
+                        ));
+            }
+            
+            log.debug("📷 DEBUG - Nom du fichier: {}", file.getOriginalFilename());
+            log.debug("📷 DEBUG - Taille: {} bytes", file.getSize());
+            log.debug("📷 DEBUG - Content-Type: {}", file.getContentType());
+            log.debug("📷 DEBUG - isMain: {}", isMain);
             
             VehiculeImage image;
             if (isMain) {
@@ -304,120 +338,76 @@ public class AdminController {
                 image = vehiculeImageService.uploadAdditionalImage(id, file);
             }
             
-            System.out.println("✅ [ADMIN] Image uploadée avec succès: " + image.getFileUrl());
+            log.info("✅ [ADMIN] Image uploadée avec succès pour véhicule {}: {}", id, image.getFileName());
+            
+            // Convertir l'image en DTO
+            VehiculeImageDTO imageDTO = convertVehiculeImageToDTO(image);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Image uploadée avec succès",
-                "image", Map.of(
-                    "id", image.getId(),
-                    "fileName", image.getFileName(),
-                    "fileUrl", image.getFileUrl(),
-                    "thumbnailUrl", image.getThumbnailUrl(),
-                    "isMain", image.isMain(),
-                    "uploadDate", image.getUploadDate()
-                )
+                "image", imageDTO
             ));
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur upload image: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ [ADMIN] Erreur upload image pour véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Erreur lors de l'upload: " + e.getMessage()));
+                    .body(Map.of(
+                        "success", false,
+                        "message", "Erreur lors de l'upload: " + e.getMessage(),
+                        "error", "UPLOAD_ERROR"
+                    ));
         }
     }
 
-    @PostMapping("/vehicules/{id}/upload-multiple")
-    public ResponseEntity<?> uploadMultipleImages(
-            @PathVariable Long id,
-            @RequestParam("files") MultipartFile[] files) {
-        
+    @PostMapping("/test-upload")
+    public ResponseEntity<?> testUpload(@RequestParam("file") MultipartFile file) {
         try {
-            System.out.println("📷 [ADMIN] Upload multiple images pour véhicule ID " + id);
-            System.out.println("📷 Nombre de fichiers: " + files.length);
+            log.info("🧪 [TEST] Upload test - Fichier: {}, Taille: {}, Type: {}", 
+                    file.getOriginalFilename(), file.getSize(), file.getContentType());
             
-            List<Map<String, Object>> uploadedImages = new ArrayList<>();
-            List<String> errors = new ArrayList<>();
-            
-            for (int i = 0; i < files.length; i++) {
-                MultipartFile file = files[i];
-                try {
-                    // Vérifier si c'est la première image et s'il n'y a pas déjà une image principale
-                    boolean isMain = (i == 0 && vehiculeImageService.getMainImage(id) == null);
-                    
-                    VehiculeImage image;
-                    if (isMain) {
-                        image = vehiculeImageService.uploadMainImage(id, file);
-                    } else {
-                        image = vehiculeImageService.uploadAdditionalImage(id, file);
-                    }
-                    
-                    uploadedImages.add(Map.of(
-                        "fileName", image.getFileName(),
-                        "fileUrl", image.getFileUrl(),
-                        "isMain", image.isMain(),
-                        "success", true
-                    ));
-                    
-                    System.out.println("✅ [ADMIN] Image " + (i+1) + " uploadée: " + file.getOriginalFilename());
-                    
-                } catch (Exception e) {
-                    errors.add("Fichier " + file.getOriginalFilename() + ": " + e.getMessage());
-                    System.err.println("❌ [ADMIN] Erreur upload image " + file.getOriginalFilename() + ": " + e.getMessage());
-                }
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Fichier vide"
+                ));
             }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("totalFiles", files.length);
-            response.put("uploadedCount", uploadedImages.size());
-            response.put("failedCount", errors.size());
-            response.put("uploadedImages", uploadedImages);
-            
-            if (!errors.isEmpty()) {
-                response.put("errors", errors);
-            }
-            
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Test d'upload réussi",
+                "fileName", file.getOriginalFilename(),
+                "fileSize", file.getSize(),
+                "contentType", file.getContentType()
+            ));
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur upload multiple: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Erreur lors de l'upload multiple: " + e.getMessage()));
+            log.error("❌ [TEST] Erreur test upload: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "Erreur: " + e.getMessage()
+            ));
         }
     }
 
     @GetMapping("/vehicules/{id}/images")
     public ResponseEntity<?> getVehiculeImages(@PathVariable Long id) {
         try {
-            System.out.println("📷 [ADMIN] Récupération images pour véhicule ID " + id);
+            log.info("📷 [ADMIN] Récupération images pour véhicule ID: {}", id);
             
             List<VehiculeImage> images = vehiculeImageService.getVehiculeImages(id);
-            System.out.println("✅ [ADMIN] " + images.size() + " images récupérées");
+            log.info("✅ [ADMIN] {} images récupérées pour véhicule ID: {}", images.size(), id);
             
-            List<Map<String, Object>> imageList = new ArrayList<>();
-            for (VehiculeImage image : images) {
-                Map<String, Object> imageMap = new HashMap<>();
-                imageMap.put("id", image.getId());
-                imageMap.put("fileName", image.getFileName());
-                imageMap.put("fileUrl", image.getFileUrl());
-                imageMap.put("thumbnailUrl", image.getThumbnailUrl());
-                imageMap.put("isMain", image.isMain());
-                imageMap.put("fileSize", image.getFileSize());
-                imageMap.put("fileType", image.getFileType());
-                imageMap.put("uploadDate", image.getUploadDate());
-                imageMap.put("uploadOrder", image.getUploadOrder());
-                imageList.add(imageMap);
-            }
+            List<VehiculeImageDTO> imageDTOs = convertImageEntitiesToDTOs(images);
             
             return ResponseEntity.ok(Map.of(
                 "vehiculeId", id,
                 "totalImages", images.size(),
-                "images", imageList
+                "images", imageDTOs
             ));
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur récupération images: " + e.getMessage());
+            log.error("❌ [ADMIN] Erreur récupération images véhicule {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération images: " + e.getMessage()));
         }
@@ -426,20 +416,18 @@ public class AdminController {
     @DeleteMapping("/vehicules/images/{imageId}")
     public ResponseEntity<?> deleteVehiculeImage(@PathVariable Long imageId) {
         try {
-            System.out.println("🗑️ [ADMIN] Suppression image ID " + imageId);
+            log.info("🗑️ [ADMIN] Suppression image ID: {}", imageId);
             
             vehiculeImageService.deleteImage(imageId);
             
-            System.out.println("✅ [ADMIN] Image supprimée avec succès");
-            
+            log.info("✅ [ADMIN] Image ID {} supprimée", imageId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Image supprimée avec succès"
             ));
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur suppression image: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ [ADMIN] Erreur suppression image {}: {}", imageId, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", e.getMessage()));
         }
@@ -448,20 +436,18 @@ public class AdminController {
     @PutMapping("/vehicules/images/{imageId}/set-main")
     public ResponseEntity<?> setImageAsMain(@PathVariable Long imageId) {
         try {
-            System.out.println("⭐ [ADMIN] Définition image ID " + imageId + " comme principale");
+            log.info("⭐ [ADMIN] Définition image ID {} comme principale", imageId);
             
             vehiculeImageService.setImageAsMain(imageId);
             
-            System.out.println("✅ [ADMIN] Image définie comme principale");
-            
+            log.info("✅ [ADMIN] Image ID {} définie comme principale", imageId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Image définie comme principale avec succès"
             ));
             
         } catch (Exception e) {
-            System.err.println("❌ [ADMIN] Erreur définition image principale: " + e.getMessage());
-            e.printStackTrace();
+            log.error("❌ [ADMIN] Erreur définition image principale {}: {}", imageId, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", e.getMessage()));
         }
@@ -473,14 +459,20 @@ public class AdminController {
     public ResponseEntity<?> getAllCommandes(
             @RequestParam(required = false) String statut) {
         try {
+            log.info("📦 [ADMIN] Récupération commandes - Statut: {}", statut != null ? statut : "tous");
+            
             List<Commande> commandes;
             if (statut != null && !statut.isEmpty()) {
                 commandes = commandeRepository.findByStatut(statut);
             } else {
                 commandes = commandeRepository.findAll();
             }
+            
+            log.info("✅ [ADMIN] {} commandes récupérées", commandes.size());
             return ResponseEntity.ok(commandes);
+            
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur récupération commandes: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération commandes: " + e.getMessage()));
         }
@@ -491,6 +483,8 @@ public class AdminController {
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
         try {
+            log.info("📦 [ADMIN] Mise à jour statut commande ID: {}", id);
+            
             Optional<Commande> commandeOpt = commandeRepository.findById(id);
             if (commandeOpt.isPresent()) {
                 Commande commande = commandeOpt.get();
@@ -498,14 +492,21 @@ public class AdminController {
                 if (statut != null && !statut.trim().isEmpty()) {
                     commande.setStatut(statut);
                     Commande updated = commandeRepository.save(commande);
+                    
+                    log.info("✅ [ADMIN] Statut commande ID {} mis à jour: {}", id, statut);
                     return ResponseEntity.ok(updated);
                 } else {
+                    log.warn("⚠️ [ADMIN] Statut vide pour commande ID: {}", id);
                     return ResponseEntity.badRequest()
                             .body(Map.of("error", "Le statut est requis"));
                 }
             }
+            
+            log.warn("⚠️ [ADMIN] Commande non trouvée ID: {}", id);
             return ResponseEntity.notFound().build();
+            
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur mise à jour statut commande {}: {}", id, e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur mise à jour statut: " + e.getMessage()));
         }
@@ -516,9 +517,15 @@ public class AdminController {
     @GetMapping("/options")
     public ResponseEntity<?> getAllOptions() {
         try {
+            log.info("⚙️ [ADMIN] Récupération toutes les options");
+            
             List<OptionVehicule> options = optionVehiculeRepository.findAll();
+            
+            log.info("✅ [ADMIN] {} options récupérées", options.size());
             return ResponseEntity.ok(options);
+            
         } catch (Exception e) {
+            log.error("❌ [ADMIN] Erreur récupération options: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur récupération options: " + e.getMessage()));
         }
@@ -535,12 +542,12 @@ public class AdminController {
     }
 
     private Vehicule convertMapToVehiculeEntity(Map<String, Object> data, Vehicule existingVehicule) {
-        System.out.println("🔧 [ADMIN] Conversion données Map -> Entité Vehicule");
+        log.info("🔧 [ADMIN] Conversion données Map -> Entité Vehicule");
         
         String type = getValueAsString(data, "typeVehicule", "type", "AUTOMOBILE");
         String energie = getValueAsString(data, "typeCarburant", "energie", "ESSENCE");
         
-        System.out.println("📋 Type détecté: " + type + ", Energie: " + energie);
+        log.debug("📋 Type détecté: {}, Energie: {}", type, energie);
         
         Vehicule vehicule;
         
@@ -591,6 +598,7 @@ public class AdminController {
                 try {
                     vehicule.setDateStock(LocalDate.parse(dateStr));
                 } catch (Exception e) {
+                    log.warn("⚠️ [ADMIN] Erreur parsing dateStock, utilisation date actuelle");
                     vehicule.setDateStock(LocalDate.now());
                 }
             }
@@ -677,10 +685,37 @@ public class AdminController {
                 String displayText = vehicleDisplayService.afficherAvecDecorations(vehicule);
                 dto.setDescriptionComplete(displayText);
             } catch (Exception e) {
+                log.warn("⚠️ [ADMIN] Erreur génération description décorée: {}", e.getMessage());
                 dto.setDescriptionComplete(vehicule.getMarque() + " " + vehicule.getModele());
             }
         }
 
+        return dto;
+    }
+    
+    // ========== MÉTHODES DE CONVERSION D'IMAGES ==========
+    
+    private List<VehiculeImageDTO> convertImageEntitiesToDTOs(List<VehiculeImage> images) {
+        List<VehiculeImageDTO> dtos = new ArrayList<>();
+        for (VehiculeImage img : images) {
+            dtos.add(convertVehiculeImageToDTO(img));
+        }
+        return dtos;
+    }
+    
+    private VehiculeImageDTO convertVehiculeImageToDTO(VehiculeImage image) {
+        if (image == null) return null;
+        
+        VehiculeImageDTO dto = new VehiculeImageDTO();
+        dto.setId(image.getId());
+        dto.setFileName(image.getFileName());
+        dto.setFileUrl(image.getFileUrl());
+        dto.setThumbnailUrl(image.getThumbnailUrl());
+        dto.setMain(image.isMain());
+        dto.setFileSize(image.getFileSize());
+        dto.setFileType(image.getFileType());
+        dto.setUploadDate(image.getUploadDate());
+        dto.setUploadOrder(image.getUploadOrder());
         return dto;
     }
     
