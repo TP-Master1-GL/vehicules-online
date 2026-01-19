@@ -18,7 +18,9 @@ public class WebConfig implements WebMvcConfigurer {
             "http://localhost:3000",
             "http://localhost:5173",
             "http://localhost:8080",
-            "http://localhost:8081"
+            "http://localhost:8081",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173"
         };
 
         String[] apiPatterns = {
@@ -31,17 +33,26 @@ public class WebConfig implements WebMvcConfigurer {
             "/manager/**",
             "/admin/**",
             "/societe/**",
-            "/test/**"
+            "/test/**",
+            "/uploads/**",
+            "/api/**"
         };
 
-        for (String pattern : apiPatterns) {
-            registry.addMapping(pattern)
-                    .allowedOrigins(allowedOrigins)
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                    .allowedHeaders("*")
-                    .allowCredentials(true)
-                    .maxAge(3600);
-        }
+        // Configuration CORS globale
+        registry.addMapping("/**")
+                .allowedOrigins(allowedOrigins)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
+
+        // Configuration spécifique pour les uploads
+        registry.addMapping("/uploads/**")
+                .allowedOrigins(allowedOrigins)
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(86400);
     }
 
     @Override
@@ -51,22 +62,33 @@ public class WebConfig implements WebMvcConfigurer {
         
         // Configuration pour les ressources statiques
         registry.addResourceHandler("/static/**")
-                .addResourceLocations("classpath:/static/");
+                .addResourceLocations("classpath:/static/")
+                .setCachePeriod(3600);
+        
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("classpath:/static/images/");
+                .addResourceLocations("classpath:/static/images/")
+                .setCachePeriod(3600);
+        
+        // Pour Swagger UI
+        registry.addResourceHandler("/swagger-ui/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/springfox-swagger-ui/")
+                .resourceChain(false);
+        
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
     
     private void exposeDirectory(String dirName, ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get(dirName);
+        Path uploadDir = Paths.get(dirName).toAbsolutePath().normalize();
         String uploadPath = uploadDir.toFile().getAbsolutePath();
         
-        if (dirName.startsWith("../")) {
-            dirName = dirName.replace("../", "");
+        if (!uploadPath.endsWith("/")) {
+            uploadPath += "/";
         }
         
         registry.addResourceHandler("/" + dirName + "/**")
-                .addResourceLocations("file:" + uploadPath + "/")
-                .setCachePeriod(3600)
+                .addResourceLocations("file:" + uploadPath)
+                .setCachePeriod(86400) // 24 heures
                 .resourceChain(true);
     }
 }
