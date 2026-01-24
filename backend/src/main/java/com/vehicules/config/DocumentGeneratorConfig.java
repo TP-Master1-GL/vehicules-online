@@ -2,7 +2,7 @@
 package com.vehicules.config;
 
 import com.vehicules.patterns.adapter.DocumentGenerator;
-import com.vehicules.patterns.adapter.ItextPdfAdapter;
+import com.vehicules.patterns.adapter.PdfAdapter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -13,6 +13,6 @@ public class DocumentGeneratorConfig {
     @Bean
     @Primary
     public DocumentGenerator documentGenerator() {
-        return new ItextPdfAdapter();
+        return new PdfAdapter();
     }
 }

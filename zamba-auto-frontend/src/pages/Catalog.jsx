@@ -751,6 +751,16 @@ const Catalog = () => {
             <div className={`grid ${gridColsClass()} gap-6 mb-12`}>
               {currentVehicles.length > 0 ? (
                 currentVehicles.map((vehicle) => {
+                  console.log('🚗 Véhicule:', {
+                  id: vehicle.id,
+                  nom: vehicle.nom,
+                  marque: vehicle.marque,
+                  image: vehicle.image,
+                  imageUrl: vehicle.imageUrl,
+                  images: vehicle.images,
+                  allImages: vehicle.allImages,
+                  hasImages: vehicle.images?.length > 0 || vehicle.allImages?.length > 0
+                })
                   const badge = getBadgeText(vehicle)
                   
                   return (
@@ -758,6 +768,7 @@ const Catalog = () => {
                       <div className="relative h-full">
                         <VehicleCard
                           vehicle={{
+
                             ...vehicle,
                             // Formatage compatible
                             image: vehicle.image || vehicle.imageUrl,

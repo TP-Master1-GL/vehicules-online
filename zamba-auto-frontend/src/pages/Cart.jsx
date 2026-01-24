@@ -2,30 +2,32 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { 
-  FaTrash, FaUndo, FaPlus, FaMinus, FaShoppingCart, 
+import {
+  FaTrash, FaUndo, FaPlus, FaMinus, FaShoppingCart,
   FaCreditCard, FaTruck, FaShieldAlt, FaArrowLeft,
-  FaCog, FaTag, FaSyncAlt
+  FaCog, FaTag, FaSyncAlt, FaImage, FaCar, FaGasPump,
+  FaCalendarAlt, FaBolt, FaIndustry
 } from 'react-icons/fa'
-import cartService from '../api/cart'
-import orderService from '../api/orders'
 import toast from 'react-hot-toast'
+import vehiculesService from '../api/vehicules'
 
 const Cart = () => {
-  const { 
-    cart, 
-    total, 
-    loading, 
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
-    undoLastAction, 
+  const {
+    cart,
+    total,
+    loading,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    undoLastAction,
+    fetchCart,
+    syncCart,
     getCartCount,
-    addDiscount,
-    removeDiscount
+    isEmpty,
+    itemCount
   } = useCart()
   
-  const { user, isAuthenticated, clientId } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   
   const [isCheckingOut, setIsCheckingOut] = useState(false)
@@ -33,88 +35,175 @@ const Cart = () => {
   const [isApplyingPromo, setIsApplyingPromo] = useState(false)
   const [discountApplied, setDiscountApplied] = useState(false)
   const [shippingCost, setShippingCost] = useState(0)
-  const [cartFromBackend, setCartFromBackend] = useState(null)
-  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncStatus, setSyncStatus] = useState('idle')
+  const [vehicleDetails, setVehicleDetails] = useState({}) // Cache pour les détails des véhicules
 
+  // Charger le panier au chargement de la page
   useEffect(() => {
     if (!isAuthenticated) {
+      toast.error('Veuillez vous connecter pour accéder à votre panier')
       navigate('/login', { state: { from: '/panier' } })
-    } else if (clientId) {
-      // Charger le panier depuis le backend
-      loadCartFromBackend()
+    } else {
+      loadCart()
     }
-  }, [isAuthenticated, navigate, clientId])
+  }, [isAuthenticated, navigate])
 
-  const loadCartFromBackend = async () => {
+  const loadCart = async () => {
     try {
-      if (clientId) {
-        const backendCart = await cartService.getCart(clientId)
-        setCartFromBackend(backendCart)
-        
-        // Synchroniser avec le panier local si nécessaire
-        if (backendCart && backendCart.lignes && backendCart.lignes.length > 0) {
-          // Ici vous pourriez synchroniser les données du backend avec le panier local
-          console.log('Panier backend chargé:', backendCart)
-        }
+      if (isAuthenticated) {
+        await fetchCart()
+        setSyncStatus('synced')
+        // Charger les détails complets des véhicules
+        await loadVehicleDetails()
       }
     } catch (error) {
       console.error('Erreur lors du chargement du panier:', error)
-      // Si le panier n'existe pas encore, ce n'est pas une erreur
-      if (error.status !== 404) {
-        toast.error('Erreur lors du chargement du panier')
-      }
+      setSyncStatus('error')
     }
   }
 
-  const syncCartWithBackend = async () => {
+  // Fonction pour charger les détails complets des véhicules depuis le backend
+  const loadVehicleDetails = async () => {
     try {
-      setIsSyncing(true)
-      if (clientId && cart.length > 0) {
-        // Pour chaque article du panier local, l'ajouter au backend
-        for (const item of cart) {
-          await cartService.addToCart({
-            clientId: clientId,
-            vehiculeId: item.vehicle?.id || item.vehicleId,
-            optionsIds: item.options?.map(opt => opt.id) || []
-          })
+      const details = {}
+      
+      for (const item of cart) {
+        const vehicle = item.vehicle || item.vehicule
+        if (vehicle && vehicle.id) {
+          try {
+            // Récupérer les détails complets du véhicule depuis le backend
+            const vehicleDetail = await vehiculesService.getVehiculeById(vehicle.id)
+            if (vehicleDetail) {
+              details[vehicle.id] = formatVehicleForDisplay(vehicleDetail)
+            }
+          } catch (error) {
+            console.warn(`Impossible de charger les détails du véhicule ${vehicle.id}:`, error)
+            // Utiliser les données de base si la requête échoue
+            details[vehicle.id] = formatVehicleForDisplay(vehicle)
+          }
         }
-        toast.success('Panier synchronisé avec le serveur')
-        await loadCartFromBackend()
       }
+      
+      setVehicleDetails(details)
     } catch (error) {
-      console.error('Erreur lors de la synchronisation:', error)
-      toast.error('Erreur lors de la synchronisation du panier')
-    } finally {
-      setIsSyncing(false)
+      console.error('Erreur lors du chargement des détails des véhicules:', error)
+    }
+  }
+
+  // Formater les données du véhicule pour l'affichage
+  const formatVehicleForDisplay = (vehicle) => {
+    if (!vehicle) return null
+
+    // Récupérer l'image principale
+    const getMainImage = (v) => {
+      if (v.imageUrl) return v.imageUrl
+      if (v.image) return v.image
+      if (v.images && Array.isArray(v.images) && v.images.length > 0) {
+        const mainImage = v.images.find(img => img.isMain) || v.images[0]
+        return mainImage.fileUrl || mainImage.url || mainImage.displayUrl
+      }
+      return "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=400&fit=crop"
+    }
+
+    // Récupérer toutes les images
+    const getAllImages = (v) => {
+      if (v.allImageUrls && Array.isArray(v.allImageUrls) && v.allImageUrls.length > 0) {
+        return v.allImageUrls
+      }
+      if (v.images && Array.isArray(v.images) && v.images.length > 0) {
+        return v.images.map(img => img.fileUrl || img.url || img.displayUrl).filter(url => url)
+      }
+      return [getMainImage(v)]
+    }
+
+    // Déterminer les caractéristiques spécifiques selon le type
+    const getSpecificFeatures = (v) => {
+      const features = []
+      
+      // Caractéristiques communes
+      if (v.couleur) features.push({ label: 'Couleur', value: v.couleur, icon: '🎨' })
+      if (v.annee) features.push({ label: 'Année', value: v.annee, icon: '📅' })
+      if (v.kilometrage) features.push({ label: 'Kilométrage', value: `${v.kilometrage.toLocaleString()} km`, icon: '📊' })
+      
+      // Caractéristiques spécifiques
+      if (v.type === 'SCOOTER' || v.typeVehicule === 'SCOOTER') {
+        if (v.cylindree) features.push({ label: 'Cylindrée', value: `${v.cylindree} cc`, icon: '⚙️' })
+        if (v.categoriePermis) features.push({ label: 'Catégorie permis', value: v.categoriePermis, icon: '📋' })
+      } else {
+        if (v.nombrePlaces) features.push({ label: 'Places', value: v.nombrePlaces, icon: '👥' })
+        if (v.nombrePortes) features.push({ label: 'Portes', value: v.nombrePortes, icon: '🚪' })
+        if (v.transmission) features.push({ label: 'Transmission', value: v.transmission, icon: '⚙️' })
+        if (v.puissance) features.push({ label: 'Puissance', value: `${v.puissance} ch`, icon: '💪' })
+      }
+      
+      // Caractéristiques énergie
+      if (v.energie === 'ELECTRIQUE' || v.fuel === 'ELECTRIQUE') {
+        if (v.autonomie) features.push({ label: 'Autonomie', value: `${v.autonomie} km`, icon: '🔋' })
+        if (v.tempsCharge) features.push({ label: 'Temps de charge', value: v.tempsCharge, icon: '⏱️' })
+        if (v.typeBatterie) features.push({ label: 'Type batterie', value: v.typeBatterie, icon: '🔋' })
+        if (v.tempsChargeRapide) features.push({ label: 'Charge rapide', value: v.tempsChargeRapide, icon: '⚡' })
+        if (v.typeChargeur) features.push({ label: 'Type chargeur', value: v.typeChargeur, icon: '🔌' })
+      } else {
+        if (v.consommation) features.push({ label: 'Consommation', value: `${v.consommation} L/100km`, icon: '⛽' })
+        if (v.carburant) features.push({ label: 'Carburant', value: v.carburant, icon: '⛽' })
+      }
+      
+      return features
+    }
+
+    // Déterminer le nom complet
+    const getName = (v) => {
+      if (v.nomComplet) return v.nomComplet
+      if (v.nom) return v.nom
+      if (v.name) return v.name
+      const marque = v.marque || v.brand || ''
+      const modele = v.modele || v.model || ''
+      return `${marque} ${modele}`.trim() || 'Véhicule'
+    }
+
+    return {
+      id: vehicle.id,
+      name: getName(vehicle),
+      marque: vehicle.marque || vehicle.brand,
+      modele: vehicle.modele || vehicle.model,
+      type: vehicle.type || vehicle.typeVehicule,
+      energie: vehicle.energie || vehicle.fuel || vehicle.typeCarburant,
+      annee: vehicle.annee,
+      prix: vehicle.prix || vehicle.price || vehicle.prixFinal || 0,
+      prixBase: vehicle.prixBase,
+      prixFinal: vehicle.prixFinal,
+      image: getMainImage(vehicle),
+      allImages: getAllImages(vehicle),
+      features: getSpecificFeatures(vehicle),
+      enSolde: vehicle.enSolde,
+      pourcentageSolde: vehicle.pourcentageSolde,
+      description: vehicle.description || vehicle.descriptionComplete,
+      options: vehicle.options || [],
+      quantiteStock: vehicle.quantite,
+      dateStock: vehicle.dateStock
     }
   }
 
   const handleCheckout = async () => {
-    if (cart.length === 0) {
+    if (isEmpty) {
       toast.error('Votre panier est vide')
       return
     }
     
     setIsCheckingOut(true)
     try {
-      // Vérifier la disponibilité avant le checkout
-      if (clientId) {
+      // Synchroniser le panier avant le checkout
+      if (isAuthenticated && syncCart) {
         try {
-          const availability = await cartService.checkAvailability(clientId)
-          if (!availability.available) {
-            toast.error('Certains articles ne sont plus disponibles')
-            return
-          }
-        } catch (error) {
-          console.warn('Vérification de disponibilité non disponible:', error)
+          await syncCart()
+        } catch (syncError) {
+          console.warn('⚠️ Synchronisation non critique:', syncError)
         }
       }
       
-      // Synchroniser le panier avec le backend
-      await syncCartWithBackend()
-      
       navigate('/checkout')
     } catch (error) {
+      console.error('Erreur lors de la préparation de la commande:', error)
       toast.error('Erreur lors de la préparation de la commande')
     } finally {
       setIsCheckingOut(false)
@@ -123,17 +212,7 @@ const Cart = () => {
 
   const handleRemoveFromCart = async (itemId) => {
     try {
-      if (clientId) {
-        // Supprimer du backend aussi
-        const backendItemId = cartFromBackend?.lignes?.find(
-          item => item.vehicule?.id === itemId || item.id === itemId
-        )?.id
-        
-        if (backendItemId) {
-          await cartService.removeFromCart(clientId, backendItemId)
-        }
-      }
-      removeFromCart(itemId)
+      await removeFromCart(itemId)
       toast.success('Article retiré du panier')
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)
@@ -146,22 +225,7 @@ const Cart = () => {
       if (newQuantity < 1) {
         await handleRemoveFromCart(itemId)
       } else {
-        if (clientId) {
-          // Trouver l'ID de la ligne dans le backend
-          const backendItemId = cartFromBackend?.lignes?.find(
-            item => item.vehicule?.id === itemId || item.id === itemId
-          )?.id
-          
-          if (backendItemId) {
-            // Mettre à jour dans le backend
-            await cartService.updateCartItemQuantity({
-              clientId: clientId,
-              lignePanierId: backendItemId,
-              nouvelleQuantite: newQuantity
-            })
-          }
-        }
-        updateQuantity(itemId, newQuantity)
+        await updateQuantity(itemId, newQuantity)
         toast.success('Quantité mise à jour')
       }
     } catch (error) {
@@ -171,17 +235,17 @@ const Cart = () => {
   }
 
   const handleClearCart = async () => {
-    try {
-      if (clientId) {
-        await cartService.clearCart(clientId)
+    if (window.confirm('Êtes-vous sûr de vouloir vider votre panier ?')) {
+      try {
+        await clearCart()
+        setDiscountApplied(false)
+        setPromoCode('')
+        setVehicleDetails({})
+        toast.success('Panier vidé avec succès')
+      } catch (error) {
+        console.error('Erreur lors de la suppression du panier:', error)
+        toast.error('Erreur lors de la suppression du panier')
       }
-      clearCart()
-      setDiscountApplied(false)
-      removeDiscount()
-      toast.success('Panier vidé')
-    } catch (error) {
-      console.error('Erreur lors de la suppression du panier:', error)
-      toast.error('Erreur lors de la suppression du panier')
     }
   }
 
@@ -193,78 +257,85 @@ const Cart = () => {
 
     setIsApplyingPromo(true)
     try {
-      const result = await cartService.applyPromoCode(promoCode)
-      if (result.success) {
+      // Simulation de code promo
+      if (promoCode === 'ZAMBA10') {
         setDiscountApplied(true)
-        addDiscount(result.discountAmount || 0)
-        toast.success('Code promo appliqué avec succès !')
+        toast.success('Code promo appliqué ! Réduction de 10%')
+      } else if (promoCode === 'FLOTTE15' && (user?.type === 'SOCIETE' || user?.customerType === 'company')) {
+        setDiscountApplied(true)
+        toast.success('Réduction flotte de 15% appliquée !')
       } else {
-        toast.error(result.message || 'Code promo invalide')
+        toast.error('Code promo invalide ou non applicable')
       }
     } catch (error) {
       toast.error('Erreur lors de l\'application du code promo')
     } finally {
       setIsApplyingPromo(false)
-    }
-  }
-
-  const handleRemovePromoCode = async () => {
-    try {
-      await cartService.removePromoCode()
-      setDiscountApplied(false)
-      removeDiscount()
       setPromoCode('')
-      toast.success('Code promo retiré')
-    } catch (error) {
-      toast.error('Erreur lors du retrait du code promo')
     }
   }
 
-  const handleApplyFleetDiscount = async () => {
-    if (user?.customerType === 'company') {
-      try {
-        // Appliquer une réduction flotte de 15%
-        const fleetDiscount = total * 0.15
-        addDiscount(fleetDiscount)
-        setDiscountApplied(true)
-        toast.success('Réduction flotte de 15% appliquée !')
-      } catch (error) {
-        toast.error('Erreur lors de l\'application de la réduction flotte')
-      }
+  const handleRemovePromoCode = () => {
+    setDiscountApplied(false)
+    setPromoCode('')
+    toast.success('Code promo retiré')
+  }
+
+  const handleApplyFleetDiscount = () => {
+    if ((user?.type === 'SOCIETE' || user?.customerType === 'company') && !discountApplied) {
+      setDiscountApplied(true)
+      toast.success('Réduction flotte de 15% appliquée !')
+    } else if (!(user?.type === 'SOCIETE' || user?.customerType === 'company')) {
+      toast.error('Cette réduction est réservée aux entreprises')
     }
   }
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price || 0)
+    if (!price && price !== 0) return '0 FCFA'
+    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA'
   }
 
   const calculateSubtotal = () => {
+    if (!cart || cart.length === 0) return 0
+    
     return cart.reduce((sum, item) => {
-      const unitPrice = item.unitPrice || item.vehicle?.prix || 0
-      const quantity = item.quantity || 1
-      return sum + (unitPrice * quantity)
+      if (!item) return sum
+      
+      // Priorité: totalPrice > prixTotal > (vehicule.prix * quantite)
+      const totalPrice = item.totalPrice || item.prixTotal
+      if (totalPrice !== undefined) return sum + totalPrice
+      
+      // Calcul basé sur le véhicule
+      const vehicle = item.vehicle || item.vehicule
+      const vehiclePrice = vehicle?.prix || vehicle?.price || 0
+      const quantity = item.quantite || item.quantity || 1
+      
+      return sum + (vehiclePrice * quantity)
     }, 0)
   }
 
   const calculateTaxes = () => {
     const subtotal = calculateSubtotal()
-    return subtotal * 0.20 // 20% de TVA (France)
+    return subtotal * 0.20 // 20% de TVA
   }
 
   const calculateShipping = () => {
-    // Frais de livraison gratuits au-dessus de 50 000€
+    // Frais de livraison gratuits au-dessus de 50 000 FCFA
     const subtotal = calculateSubtotal()
-    return subtotal > 50000 ? 0 : 500
+    return subtotal > 50000 ? 0 : 5000 // 5000 FCFA de frais de livraison
   }
 
   const calculateDiscount = () => {
-    // Si une réduction est appliquée via le contexte
-    return discountApplied ? (calculateSubtotal() * 0.15) : 0
+    if (discountApplied) {
+      const subtotal = calculateSubtotal()
+      // 10% pour ZAMBA10, 15% pour FLOTTE15
+      if (promoCode === 'ZAMBA10') {
+        return subtotal * 0.10
+      } else if (promoCode === 'FLOTTE15' || user?.type === 'SOCIETE' || user?.customerType === 'company') {
+        return subtotal * 0.15
+      }
+    }
+    return 0
   }
 
   const calculateTotal = () => {
@@ -276,38 +347,61 @@ const Cart = () => {
     return subtotal + shipping + taxes - discount
   }
 
-  const getVehicleImage = (vehicle) => {
-    if (vehicle?.imageUrl) {
-      return vehicle.imageUrl
-    } else if (vehicle?.imageThumbnailUrl) {
-      return vehicle.imageThumbnailUrl
-    } else if (vehicle?.additionalImages && vehicle.additionalImages.length > 0) {
-      return vehicle.additionalImages[0]
+  const handleManualSync = async () => {
+    try {
+      setSyncStatus('syncing')
+      await fetchCart()
+      await loadVehicleDetails()
+      setSyncStatus('synced')
+      toast.success('Panier synchronisé avec le serveur')
+    } catch (error) {
+      setSyncStatus('error')
+      toast.error('Erreur lors de la synchronisation')
     }
-    return null
   }
 
-  if (loading) {
+  // Obtenir les données formatées du véhicule
+  const getFormattedVehicle = (item) => {
+    const vehicle = item.vehicle || item.vehicule
+    if (!vehicle || !vehicle.id) return null
+    
+    // Utiliser les détails chargés ou formater à la volée
+    const formatted = vehicleDetails[vehicle.id] || formatVehicleForDisplay(vehicle)
+    
+    // Ajouter les informations spécifiques à l'item
+    const quantity = item.quantite || item.quantity || 1
+    const options = item.selectedOptions || item.options || []
+    const totalPrice = item.totalPrice || item.prixTotal || 
+                      (formatted?.prix * quantity)
+    
+    return {
+      ...formatted,
+      quantity,
+      options,
+      totalPrice,
+      cartItemId: item.id
+    }
+  }
+
+  if (loading && (!cart || cart.length === 0)) {
     return (
-      <div className="section bg-white">
-        <div className="container">
-          <div className="flex justify-center items-center h-64">
-            <div className="spinner"></div>
-            <span className="ml-4 text-primary-gray">Chargement du panier...</span>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Chargement du panier...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="section bg-white">
-      <div className="container">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-primary-gray hover:text-primary-dark mb-6"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"
           >
             <FaArrowLeft />
             Retour
@@ -315,31 +409,37 @@ const Cart = () => {
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Mon panier</h1>
-              <p className="text-primary-gray">
-                {cart.length} article{cart.length !== 1 ? 's' : ''} dans votre panier
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Mon panier</h1>
+              <p className="text-gray-600">
+                {itemCount || 0} article{(itemCount || 0) !== 1 ? 's' : ''} dans votre panier
               </p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-              {isSyncing && (
-                <div className="flex items-center gap-2 text-blue-600">
-                  <FaSyncAlt className="animate-spin" />
-                  <span className="text-sm">Synchronisation...</span>
-                </div>
-              )}
+              {/* Statut de synchronisation */}
+              <div className={`text-sm px-3 py-1 rounded-full ${
+                syncStatus === 'synced' ? 'bg-green-100 text-green-800' :
+                syncStatus === 'syncing' ? 'bg-blue-100 text-blue-800' :
+                syncStatus === 'error' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {syncStatus === 'synced' && '✓ Synchronisé'}
+                {syncStatus === 'syncing' && '⏳ Synchronisation...'}
+                {syncStatus === 'error' && '⚠️ Erreur de sync'}
+                {syncStatus === 'idle' && '⚪ Non synchronisé'}
+              </div>
               
-              {cart.length > 0 && (
+              {!isEmpty && (
                 <button
                   onClick={undoLastAction}
-                  className="flex items-center gap-2 text-primary-orange hover:text-primary-orange-hover px-4 py-2 rounded-lg border border-primary-orange hover:bg-orange-50 transition-colors"
+                  className="flex items-center gap-2 text-orange-600 hover:text-orange-700 px-4 py-2 rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors"
                 >
                   <FaUndo />
                   Annuler
                 </button>
               )}
               
-              {cart.length > 0 && (
+              {!isEmpty && (
                 <button
                   onClick={handleClearCart}
                   className="flex items-center gap-2 text-red-600 hover:text-red-700 px-4 py-2 rounded-lg border border-red-200 hover:bg-red-50 transition-colors"
@@ -349,63 +449,53 @@ const Cart = () => {
                 </button>
               )}
               
-              {clientId && cart.length > 0 && (
+              {isAuthenticated && !isEmpty && (
                 <button
-                  onClick={syncCartWithBackend}
-                  disabled={isSyncing}
+                  onClick={handleManualSync}
+                  disabled={syncStatus === 'syncing'}
                   className="flex items-center gap-2 text-blue-600 hover:text-blue-700 px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors disabled:opacity-50"
                 >
-                  <FaSyncAlt className={isSyncing ? 'animate-spin' : ''} />
-                  Synchroniser
+                  <FaSyncAlt className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+                  {syncStatus === 'syncing' ? 'Synchronisation...' : 'Synchroniser'}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {cart.length === 0 ? (
-          <div className="card p-12 text-center">
-            <FaShoppingCart className="w-24 h-24 text-gray-300 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold mb-4">Votre panier est vide</h3>
-            <p className="text-primary-gray mb-8 max-w-md mx-auto">
+        {isEmpty ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <FaShoppingCart className="text-gray-300 text-6xl mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Votre panier est vide</h2>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Commencez par ajouter des véhicules à votre panier pour les acheter ou les louer.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/catalogue" className="btn btn-primary">
+              <Link 
+                to="/catalogue" 
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
                 Parcourir le catalogue
               </Link>
-              <Link to="/achat-flotte" className="btn btn-outline">
+              <Link 
+                to="/achat-flotte" 
+                className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+              >
                 Solution flotte entreprise
               </Link>
             </div>
-            
-            {/* Afficher le panier du backend s'il existe */}
-            {cartFromBackend && cartFromBackend.lignes && cartFromBackend.lignes.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h4 className="text-lg font-bold mb-4">Panier sauvegardé sur le serveur</h4>
-                <p className="text-primary-gray mb-4">
-                  Vous avez {cartFromBackend.nombreArticles} article{cartFromBackend.nombreArticles !== 1 ? 's' : ''} dans votre panier enregistré
-                </p>
-                <button
-                  onClick={syncCartWithBackend}
-                  className="btn btn-outline"
-                >
-                  Charger mon panier sauvegardé
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="card mb-6">
+              <div className="bg-white rounded-lg shadow-md mb-6">
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Vos véhicules sélectionnés</h2>
-                    {cartFromBackend && (
+                    <h2 className="text-xl font-bold text-gray-800">Vos véhicules sélectionnés</h2>
+                    {isAuthenticated && syncStatus === 'synced' && (
                       <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                        Synchronisé avec le serveur
+                        ✓ Sauvegardé sur le serveur
                       </span>
                     )}
                   </div>
@@ -413,73 +503,109 @@ const Cart = () => {
                 
                 <div className="divide-y divide-gray-100">
                   {cart.map((item) => {
-                    const vehicle = item.vehicle || {}
-                    const vehicleName = vehicle.name || `${vehicle.marque || ''} ${vehicle.modele || ''}`.trim() || 'Véhicule'
-                    const vehicleType = vehicle.type || vehicle.categorie || 'Non spécifié'
-                    const vehicleYear = vehicle.year || vehicle.annee || '2024'
-                    const vehicleFuel = vehicle.fuel || vehicle.carburant || 'Essence'
-                    const unitPrice = item.unitPrice || vehicle.prix || 0
-                    const quantity = item.quantity || 1
-                    const totalPrice = item.totalPrice || unitPrice * quantity
-                    const vehicleImage = getVehicleImage(vehicle)
-                    const options = item.options || item.selectedOptions || []
+                    const vehicleData = getFormattedVehicle(item)
+                    if (!vehicleData) return null
                     
                     return (
-                      <div key={item.id} className="p-6">
+                      <div key={vehicleData.cartItemId} className="p-6">
                         <div className="flex flex-col md:flex-row gap-6">
                           {/* Vehicle Image */}
                           <div className="md:w-1/3">
-                            {vehicleImage ? (
+                            <div className="relative h-48 rounded-lg overflow-hidden bg-gray-100">
                               <img
-                                src={vehicleImage}
-                                alt={vehicleName}
-                                className="w-full h-48 object-cover rounded-lg"
+                                src={vehicleData.image}
+                                alt={vehicleData.name}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  e.target.src = "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=600&h=400&fit=crop"
+                                  e.target.className = "w-full h-full object-cover"
+                                }}
                               />
-                            ) : (
-                              <div className="w-full h-48 bg-gradient-to-br from-blue-50 to-gray-100 rounded-lg flex items-center justify-center">
-                                <div className="text-6xl">🚗</div>
-                              </div>
-                            )}
+                              {vehicleData.allImages && vehicleData.allImages.length > 1 && (
+                                <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                  +{vehicleData.allImages.length - 1} images
+                                </div>
+                              )}
+                              {vehicleData.enSolde && (
+                                <div className="absolute top-2 left-2 bg-red-500 text-white text-sm px-2 py-1 rounded">
+                                  -{vehicleData.pourcentageSolde || 10}%
+                                </div>
+                              )}
+                            </div>
                           </div>
                           
                           {/* Vehicle Details */}
                           <div className="md:w-2/3">
                             <div className="flex justify-between items-start mb-4">
                               <div>
-                                <h3 className="text-xl font-bold mb-2">{vehicleName}</h3>
-                                <p className="text-primary-gray mb-2">{vehicleType}</p>
-                                <div className="flex items-center gap-4 text-sm text-primary-gray">
-                                  <span>Année: {vehicleYear}</span>
-                                  <span>Carburant: {vehicleFuel}</span>
-                                  {vehicle.kilometrage && (
-                                    <span>Kilométrage: {vehicle.kilometrage.toLocaleString()} km</span>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">{vehicleData.name}</h3>
+                                <div className="flex items-center gap-4 mb-2">
+                                  <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                                    <FaCar className="w-3 h-3" />
+                                    {vehicleData.type}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                                    <FaGasPump className="w-3 h-3" />
+                                    {vehicleData.energie}
+                                  </span>
+                                  {vehicleData.annee && (
+                                    <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                                      <FaCalendarAlt className="w-3 h-3" />
+                                      {vehicleData.annee}
+                                    </span>
                                   )}
                                 </div>
+                                
+                                {/* Caractéristiques */}
+                                {vehicleData.features && vehicleData.features.length > 0 && (
+                                  <div className="mb-3">
+                                    <div className="flex flex-wrap gap-1">
+                                      {vehicleData.features.slice(0, 4).map((feature, idx) => (
+                                        <span 
+                                          key={idx} 
+                                          className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                                        >
+                                          {feature.icon} {feature.label}: {feature.value}
+                                        </span>
+                                      ))}
+                                      {vehicleData.features.length > 4 && (
+                                        <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                          +{vehicleData.features.length - 4} autres
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="text-right">
-                                <div className="text-2xl font-bold text-primary-orange">
-                                  {formatPrice(unitPrice)}
+                                <div className="text-2xl font-bold text-orange-600">
+                                  {formatPrice(vehicleData.prix)}
                                 </div>
-                                <div className="text-sm text-primary-gray">Prix unitaire</div>
+                                {vehicleData.prixBase && vehicleData.prixBase > vehicleData.prix && (
+                                  <div className="text-sm text-gray-500 line-through">
+                                    {formatPrice(vehicleData.prixBase)}
+                                  </div>
+                                )}
+                                <div className="text-sm text-gray-500">Prix unitaire</div>
                               </div>
                             </div>
                             
                             {/* Options */}
-                            {options.length > 0 && (
+                            {vehicleData.options && vehicleData.options.length > 0 && (
                               <div className="mb-4">
-                                <h4 className="text-sm font-medium text-primary-gray mb-2 flex items-center gap-2">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                                   <FaCog />
                                   Options sélectionnées:
                                 </h4>
                                 <div className="flex flex-wrap gap-2">
-                                  {options.map((option, idx) => (
+                                  {vehicleData.options.map((option, idx) => (
                                     <span
                                       key={idx}
                                       className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
                                     >
                                       <FaTag className="w-3 h-3" />
-                                      {option.name || option.nom || `Option ${idx + 1}`}
+                                      {option.nom || option.name || `Option ${idx + 1}`}
                                       {option.prix && (
                                         <span className="font-medium"> (+{formatPrice(option.prix)})</span>
                                       )}
@@ -494,17 +620,17 @@ const Cart = () => {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center border border-gray-300 rounded-lg">
                                   <button
-                                    onClick={() => handleUpdateQuantity(item.id, quantity - 1)}
+                                    onClick={() => handleUpdateQuantity(vehicleData.cartItemId, vehicleData.quantity - 1)}
                                     className="px-3 py-2 hover:bg-gray-100 transition-colors"
                                     aria-label="Réduire la quantité"
                                   >
                                     <FaMinus className="w-4 h-4" />
                                   </button>
-                                  <span className="px-4 py-2 min-w-[60px] text-center font-medium">
-                                    {quantity}
+                                  <span className="px-4 py-2 min-w-[60px] text-center font-medium text-gray-800">
+                                    {vehicleData.quantity}
                                   </span>
                                   <button
-                                    onClick={() => handleUpdateQuantity(item.id, quantity + 1)}
+                                    onClick={() => handleUpdateQuantity(vehicleData.cartItemId, vehicleData.quantity + 1)}
                                     className="px-3 py-2 hover:bg-gray-100 transition-colors"
                                     aria-label="Augmenter la quantité"
                                   >
@@ -513,7 +639,7 @@ const Cart = () => {
                                 </div>
                                 
                                 <button
-                                  onClick={() => handleRemoveFromCart(item.id)}
+                                  onClick={() => handleRemoveFromCart(vehicleData.cartItemId)}
                                   className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors"
                                 >
                                   <FaTrash className="w-4 h-4" />
@@ -522,11 +648,11 @@ const Cart = () => {
                               </div>
                               
                               <div className="text-right">
-                                <div className="text-xl font-bold">
-                                  {formatPrice(totalPrice)}
+                                <div className="text-xl font-bold text-gray-800">
+                                  {formatPrice(vehicleData.totalPrice)}
                                 </div>
-                                <div className="text-sm text-primary-gray">
-                                  Total pour {quantity} unité{quantity > 1 ? 's' : ''}
+                                <div className="text-sm text-gray-500">
+                                  Total pour {vehicleData.quantity} unité{vehicleData.quantity > 1 ? 's' : ''}
                                 </div>
                               </div>
                             </div>
@@ -539,32 +665,38 @@ const Cart = () => {
               </div>
               
               {/* Customer Info & Promo Code */}
-              <div className="card">
+              <div className="bg-white rounded-lg shadow-md">
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Customer Info */}
                     <div>
-                      <h3 className="text-xl font-bold mb-4">Informations client</h3>
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">Informations client</h3>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm text-primary-gray mb-1">Nom</p>
-                          <p className="font-medium">{user?.name || 'Non connecté'}</p>
+                          <p className="text-sm text-gray-600 mb-1">Nom</p>
+                          <p className="font-medium text-gray-800">{user?.name || user?.nom || user?.prenom || 'Non connecté'}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-primary-gray mb-1">Type de compte</p>
-                          <p className="font-medium">
-                            {user?.customerType === 'individual' ? 'Particulier' :
-                             user?.customerType === 'company' ? 'Entreprise' : 'Filiale'}
+                          <p className="text-sm text-gray-600 mb-1">Type de compte</p>
+                          <p className="font-medium text-gray-800 flex items-center gap-2">
+                            {user?.type === 'SOCIETE' ? (
+                              <>
+                                <FaIndustry className="w-4 h-4" />
+                                Entreprise
+                              </>
+                            ) : (
+                              'Particulier'
+                            )}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-primary-gray mb-1">Email</p>
-                          <p className="font-medium">{user?.email || 'Non disponible'}</p>
+                          <p className="text-sm text-gray-600 mb-1">Email</p>
+                          <p className="font-medium text-gray-800">{user?.email || 'Non disponible'}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-primary-gray mb-1">Statut</p>
+                          <p className="text-sm text-gray-600 mb-1">Statut</p>
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            Prêt à commander
+                            {isAuthenticated ? '✓ Connecté' : 'Non connecté'}
                           </span>
                         </div>
                       </div>
@@ -572,7 +704,7 @@ const Cart = () => {
                     
                     {/* Promo Code */}
                     <div>
-                      <h3 className="text-xl font-bold mb-4">Code promo</h3>
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">Code promo</h3>
                       <div className="space-y-3">
                         {!discountApplied ? (
                           <>
@@ -582,21 +714,22 @@ const Cart = () => {
                                 value={promoCode}
                                 onChange={(e) => setPromoCode(e.target.value)}
                                 placeholder="Entrez votre code promo"
-                                className="form-input flex-1"
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               />
                               <button
                                 onClick={handleApplyPromoCode}
                                 disabled={isApplyingPromo}
-                                className="btn btn-primary whitespace-nowrap"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
                               >
                                 {isApplyingPromo ? 'Application...' : 'Appliquer'}
                               </button>
                             </div>
-                            {user?.customerType === 'company' && (
+                            {user?.type === 'SOCIETE' && (
                               <button
                                 onClick={handleApplyFleetDiscount}
-                                className="w-full btn bg-blue-600 text-white hover:bg-blue-700"
+                                className="w-full px-4 py-3 bg-gradient-to-r from-blue-700 to-blue-800 text-white rounded-lg font-medium hover:from-blue-800 hover:to-blue-900 transition-colors flex items-center justify-center gap-2"
                               >
+                                <FaIndustry />
                                 Appliquer la réduction flotte (-15%)
                               </button>
                             )}
@@ -607,7 +740,7 @@ const Cart = () => {
                               <div>
                                 <p className="font-medium text-green-800">Réduction appliquée</p>
                                 <p className="text-sm text-green-600">
-                                  {promoCode ? `Code: ${promoCode}` : 'Réduction flotte'}
+                                  {promoCode ? `Code: ${promoCode}` : 'Réduction flotte (15%)'}
                                 </p>
                               </div>
                               <button
@@ -619,8 +752,9 @@ const Cart = () => {
                             </div>
                           </div>
                         )}
-                        <p className="text-sm text-primary-gray">
-                          Codes promo disponibles: Été2024, Flotte15, Premium10
+                        <p className="text-sm text-gray-500">
+                          Codes promo disponibles: <span className="font-medium">ZAMBA10</span> (-10%)
+                          {user?.type === 'SOCIETE' && ', <span className="font-medium">FLOTTE15</span> (-15%)'}
                         </p>
                       </div>
                     </div>
@@ -631,42 +765,42 @@ const Cart = () => {
             
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="card sticky top-6">
+              <div className="bg-white rounded-lg shadow-md sticky top-6">
                 <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold">Récapitulatif de commande</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Récapitulatif de commande</h2>
                 </div>
                 
                 <div className="p-6">
                   {/* Price Breakdown */}
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between">
-                      <span className="text-primary-gray">Sous-total</span>
-                      <span className="font-medium">{formatPrice(calculateSubtotal())}</span>
+                      <span className="text-gray-600">Sous-total</span>
+                      <span className="font-medium text-gray-800">{formatPrice(calculateSubtotal())}</span>
                     </div>
                     
                     <div className="flex justify-between">
-                      <span className="text-primary-gray">Frais de livraison</span>
-                      <span className="font-medium">
+                      <span className="text-gray-600">Frais de livraison</span>
+                      <span className="font-medium text-gray-800">
                         {calculateShipping() === 0 ? 'Gratuite' : formatPrice(calculateShipping())}
                       </span>
                     </div>
                     
                     <div className="flex justify-between">
-                      <span className="text-primary-gray">TVA (20%)</span>
-                      <span className="font-medium">{formatPrice(calculateTaxes())}</span>
+                      <span className="text-gray-600">TVA (20%)</span>
+                      <span className="font-medium text-gray-800">{formatPrice(calculateTaxes())}</span>
                     </div>
                     
                     {discountApplied && (
                       <div className="flex justify-between text-green-600">
-                        <span>Réduction appliquée</span>
+                        <span>Réduction</span>
                         <span className="font-medium">-{formatPrice(calculateDiscount())}</span>
                       </div>
                     )}
                     
                     <div className="border-t border-gray-200 pt-4">
                       <div className="flex justify-between text-lg font-bold">
-                        <span>Total</span>
-                        <span className="text-2xl text-primary-orange">
+                        <span className="text-gray-800">Total</span>
+                        <span className="text-2xl text-orange-600">
                           {formatPrice(calculateTotal())}
                         </span>
                       </div>
@@ -681,8 +815,8 @@ const Cart = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    disabled={isCheckingOut || cart.length === 0}
-                    className="w-full btn btn-primary mb-6 py-4 text-lg font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                    disabled={isCheckingOut || isEmpty}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
                     <FaCreditCard />
                     {isCheckingOut ? 'Préparation...' : 'Procéder au paiement'}
@@ -691,40 +825,40 @@ const Cart = () => {
                   {/* Features */}
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
-                      <FaTruck className="w-5 h-5 text-primary-orange mt-1 flex-shrink-0" />
+                      <FaTruck className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium mb-1">Livraison gratuite</h4>
-                        <p className="text-sm text-primary-gray">
-                          Pour les commandes supérieures à 50 000 €
+                        <h4 className="font-medium text-gray-800 mb-1">Livraison gratuite</h4>
+                        <p className="text-sm text-gray-600">
+                          Pour les commandes supérieures à 50 000 FCFA
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex items-start gap-3">
-                      <FaShieldAlt className="w-5 h-5 text-primary-orange mt-1 flex-shrink-0" />
+                      <FaShieldAlt className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium mb-1">Garantie incluse</h4>
-                        <p className="text-sm text-primary-gray">
+                        <h4 className="font-medium text-gray-800 mb-1">Garantie incluse</h4>
+                        <p className="text-sm text-gray-600">
                           12 mois de garantie sur tous les véhicules
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex items-start gap-3">
-                      <FaUndo className="w-5 h-5 text-primary-orange mt-1 flex-shrink-0" />
+                      <FaUndo className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium mb-1">Retour facile</h4>
-                        <p className="text-sm text-primary-gray">
+                        <h4 className="font-medium text-gray-800 mb-1">Retour facile</h4>
+                        <p className="text-sm text-gray-600">
                           30 jours pour changer d'avis
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex items-start gap-3">
-                      <FaSyncAlt className="w-5 h-5 text-primary-orange mt-1 flex-shrink-0" />
+                      <FaSyncAlt className="w-5 h-5 text-orange-600 mt-1 flex-shrink-0" />
                       <div>
-                        <h4 className="font-medium mb-1">Panier sauvegardé</h4>
-                        <p className="text-sm text-primary-gray">
+                        <h4 className="font-medium text-gray-800 mb-1">Panier sauvegardé</h4>
+                        <p className="text-sm text-gray-600">
                           Votre panier est automatiquement sauvegardé
                         </p>
                       </div>
@@ -735,7 +869,7 @@ const Cart = () => {
                   <div className="mt-8 pt-8 border-t border-gray-200">
                     <Link
                       to="/catalogue"
-                      className="block text-center text-primary-orange hover:text-primary-orange-hover font-medium transition-colors"
+                      className="block text-center text-blue-600 hover:text-blue-800 font-medium transition-colors"
                     >
                       ← Continuer mes achats
                     </Link>
@@ -744,8 +878,8 @@ const Cart = () => {
               </div>
               
               {/* Fleet Discount */}
-              {user?.customerType === 'company' && !discountApplied && (
-                <div className="card mt-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+              {user?.type === 'SOCIETE' && !discountApplied && (
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-md mt-6">
                   <div className="p-6">
                     <h3 className="text-xl font-bold mb-2">Réduction flotte</h3>
                     <p className="mb-4 opacity-90">
@@ -753,8 +887,9 @@ const Cart = () => {
                     </p>
                     <button 
                       onClick={handleApplyFleetDiscount}
-                      className="w-full btn bg-white text-blue-700 hover:bg-gray-100 font-medium"
+                      className="w-full px-4 py-3 bg-white text-blue-700 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
                     >
+                      <FaIndustry />
                       Activer la réduction
                     </button>
                   </div>
@@ -762,38 +897,38 @@ const Cart = () => {
               )}
               
               {/* Quick Actions */}
-              <div className="card mt-6">
+              <div className="bg-white rounded-lg shadow-md mt-6">
                 <div className="p-6">
-                  <h3 className="text-lg font-bold mb-4">Actions rapides</h3>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">Actions rapides</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => navigate('/catalogue?promo=true')}
+                    <Link
+                      to="/catalogue?promo=true"
                       className="p-3 border border-gray-200 rounded-lg text-center hover:bg-gray-50 transition-colors"
                     >
-                      <div className="text-primary-orange font-medium">Promotions</div>
-                      <div className="text-xs text-primary-gray">Véhicules en solde</div>
-                    </button>
-                    <button
-                      onClick={() => navigate('/configuration')}
+                      <div className="text-orange-600 font-medium">Promotions</div>
+                      <div className="text-xs text-gray-500">Véhicules en solde</div>
+                    </Link>
+                    <Link
+                      to="/configuration"
                       className="p-3 border border-gray-200 rounded-lg text-center hover:bg-gray-50 transition-colors"
                     >
-                      <div className="text-primary-orange font-medium">Configurer</div>
-                      <div className="text-xs text-primary-gray">Véhicule sur mesure</div>
-                    </button>
-                    <button
-                      onClick={() => navigate('/devis')}
+                      <div className="text-orange-600 font-medium">Configurer</div>
+                      <div className="text-xs text-gray-500">Véhicule sur mesure</div>
+                    </Link>
+                    <Link
+                      to="/devis"
                       className="p-3 border border-gray-200 rounded-lg text-center hover:bg-gray-50 transition-colors"
                     >
-                      <div className="text-primary-orange font-medium">Devis</div>
-                      <div className="text-xs text-primary-gray">Demande de devis</div>
-                    </button>
-                    <button
-                      onClick={() => navigate('/contact')}
+                      <div className="text-orange-600 font-medium">Devis</div>
+                      <div className="text-xs text-gray-500">Demande de devis</div>
+                    </Link>
+                    <Link
+                      to="/contact"
                       className="p-3 border border-gray-200 rounded-lg text-center hover:bg-gray-50 transition-colors"
                     >
-                      <div className="text-primary-orange font-medium">Aide</div>
-                      <div className="text-xs text-primary-gray">Contactez-nous</div>
-                    </button>
+                      <div className="text-orange-600 font-medium">Aide</div>
+                      <div className="text-xs text-gray-500">Contactez-nous</div>
+                    </Link>
                   </div>
                 </div>
               </div>

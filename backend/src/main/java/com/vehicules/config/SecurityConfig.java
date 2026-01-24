@@ -1,6 +1,7 @@
 package com.vehicules.config;
 
 import com.vehicules.services.CustomUserDetailsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,96 +22,99 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Slf4j
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                         CustomUserDetailsService userDetailsService) {
+                          CustomUserDetailsService userDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("🔐 Configuration de la sécurité en cours...");
+        
         http
-            // 1. Désactiver CSRF pour les API REST
+            // 1. Centralisation du CORS et désactivation CSRF
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             
-            // 2. Configurer CORS - Gardez seulement SI vous supprimez WebConfig
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // 3. Configurer l'autorisation - ORDRE IMPORTANT !
+            // 2. Gestion des accès (ORDRE CRITIQUE : du plus spécifique au plus général)
             .authorizeHttpRequests(authz -> authz
-                // Routes ADMIN en PREMIER (ordre spécifique → général)
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // Routes MANAGER
-                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
-                
-                // Routes authentifiées
-                .requestMatchers("/api/commandes/**").authenticated()
-                
-                // Routes publiques - en DERNIER
+                // ========== RESSOURCES PUBLIQUES (TRÈS SPÉCIFIQUES - EN PREMIER) ==========
                 .requestMatchers(
+                    // Authentification
                     "/api/auth/**",
-                    "/auth/**",
-                    "/api/setup/**",
-                    "/api/test/**",
-                    "/api/debug/**",
-                    "/api/catalogue/**", 
-                    "/catalogue/**",
-                    "/api/societe/**",
-                    "/societe/**",
-                    "/api/panier/**",
-                    "/panier/**",
-                    "/swagger-ui/**",
+                    
+                    // Catalogue public - TOUS LES ENDPOINTS
+                    "/api/catalogue",
+                    "/api/catalogue/**",
+                    
+                    // Images
+                    "/api/images/**",
+                    
+                    // Documentation
+                    "/swagger-ui/**", 
                     "/v3/api-docs/**",
                     "/api-docs/**",
+                    
+                    // H2 Console (dev seulement)
                     "/h2-console/**",
-                    "/error",
+                    
+                    // Fichiers statiques
+                    "/uploads/**",
+                    "/static/**",
                     "/favicon.ico",
-                    // Static files pour React
+                    "/error"
+                ).permitAll()
+
+                // ========== ADMIN & MANAGER ==========
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                
+                // ========== APIs AUTHENTIFIÉES SPÉCIFIQUES ==========
+                // NOTE: La règle générique "/api/**" plus bas rend déjà ces endpoints authentifiés
+                // Pas besoin de les répéter ici
+                
+                // ========== AUTRES ROUTES PUBLICES ==========
+                .requestMatchers(
                     "/",
                     "/index.html",
-                    "/static/**",
-                    "/assets/**",
-                    "/manifest.json",
-                    "/logo192.png",
-                    "/logo512.png"
-                ).permitAll()
-                
-                // Pour React Router - permettez les routes frontend
-                .requestMatchers(
                     "/login",
-                    "/register", 
-                    "/catalogue",
-                    "/vehicules/**",
-                    "/admin/**"
+                    "/register"
                 ).permitAll()
                 
-                // Toutes les autres API nécessitent auth
+                // ========== TOUTES LES AUTRES APIs (GÉNÉRIQUE - EN DERNIER) ==========
+                // Cette règle capture TOUS les endpoints /api/ non déjà spécifiés ci-dessus
                 .requestMatchers("/api/**").authenticated()
                 
-                // Tout le reste (fichiers statiques, React) est permis
+                // ========== TOUT LE RESTE ==========
                 .anyRequest().permitAll()
             )
             
-            
-            // 4. Session stateless pour JWT
+            // 3. Mode Stateless (JWT)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             
-            // 5. Ajouter le filtre JWT
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // 4. Authentification
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            
+            // 5. Headers de sécurité
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin()) // Pour H2 console
+            );
 
+        log.info("✅ Configuration de sécurité terminée");
         return http.build();
     }
 
@@ -118,45 +122,21 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Spécifiez les origines exactes, pas "*" avec allowCredentials
+        // Autoriser les origines de développement
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:5173",
             "http://localhost:8080"
         ));
         
-        // Méthodes autorisées
-        configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
-        ));
-        
-        // Headers autorisés
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-            "Cache-Control"
-        ));
-        
-        // Headers exposés
-        configuration.setExposedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Disposition"
-        ));
-        
-        // Autoriser les credentials
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
         configuration.setAllowCredentials(true);
-        
-        // Cache CORS (en secondes)
         configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        
         return source;
     }
 

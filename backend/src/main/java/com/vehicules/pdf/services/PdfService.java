@@ -1,232 +1,327 @@
-// src/main/java/com/vehicules/pdf/services/PdfService.java
 package com.vehicules.pdf.services;
 
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.properties.UnitValue;
+import com.vehicules.patterns.adapter.DocumentGenerator;
 import com.vehicules.core.entities.*;
+import com.vehicules.core.enums.TypeDocument;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Service
 public class PdfService {
     
+    @Autowired
+    private DocumentGenerator documentGenerator;
+    
     public byte[] genererDemandeImmatriculation(Commande commande, Vehicule vehicule) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
-        
-        // Titre
-        document.add(new Paragraph("DEMANDE D'IMMATRICULATION")
-            .setBold()
-            .setFontSize(16));
+        String title = "DEMANDE D'IMMATRICULATION";
+        StringBuilder content = new StringBuilder();
         
         // Informations commande
-        document.add(new Paragraph("Commande N°: " + commande.getId()));
-        document.add(new Paragraph("Date: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date())));
+        content.append("Commande N°: ").append(commande.getId()).append("\n");
+        content.append("Date: ").append(new SimpleDateFormat("dd/MM/yyyy").format(new Date())).append("\n\n");
         
         // Informations véhicule
-        document.add(new Paragraph("\nInformations du véhicule:")
-            .setBold());
-        
-        Table tableVehicule = new Table(UnitValue.createPercentArray(2)).useAllAvailableWidth();
-        tableVehicule.addCell("Marque");
-        tableVehicule.addCell(vehicule.getMarque());
-        tableVehicule.addCell("Modèle");
-        tableVehicule.addCell(vehicule.getModele());
-        tableVehicule.addCell("Type");
-        tableVehicule.addCell(vehicule.getType());
-        tableVehicule.addCell("Énergie");
-        tableVehicule.addCell(vehicule.getEnergie());
-        
-        document.add(tableVehicule);
+        content.append("INFORMATIONS DU VÉHICULE:\n");
+        content.append("=======================\n");
+        content.append("Marque: ").append(vehicule.getMarque()).append("\n");
+        content.append("Modèle: ").append(vehicule.getModele()).append("\n");
+        content.append("Type: ").append(vehicule.getType()).append("\n");
+        content.append("Énergie: ").append(vehicule.getEnergie()).append("\n");
         
         // Informations client
         if (commande.getClient() != null) {
-            document.add(new Paragraph("\nInformations du client:")
-                .setBold());
-            
-            Table tableClient = new Table(UnitValue.createPercentArray(2)).useAllAvailableWidth();
-            tableClient.addCell("Nom");
-            tableClient.addCell(commande.getClient().getNom());
-            tableClient.addCell("Type");
-            tableClient.addCell(commande.getClient().getType());
+            content.append("\nINFORMATIONS DU CLIENT:\n");
+            content.append("====================\n");
+            content.append("Nom: ").append(commande.getClient().getNom()).append("\n");
+            content.append("Type: ").append(commande.getClient().getType()).append("\n");
             
             if (commande.getClient() instanceof Societe) {
                 Societe societe = (Societe) commande.getClient();
-                tableClient.addCell("Raison sociale");
-                tableClient.addCell(societe.getRaisonSociale());
-                tableClient.addCell("SIRET");
-                tableClient.addCell(societe.getSiret());
+                content.append("Raison sociale: ").append(societe.getRaisonSociale()).append("\n");
+                content.append("SIRET: ").append(societe.getSiret()).append("\n");
+            } else if (commande.getClient() instanceof ClientParticulier) {
+                ClientParticulier particulier = (ClientParticulier) commande.getClient();
+                content.append("Prénom: ").append(particulier.getPrenom()).append("\n");
             }
-            
-            document.add(tableClient);
         }
         
-        document.add(new Paragraph("\n\nSignature: ___________________"));
+        content.append("\n\nSignature: ___________________");
         
-        document.close();
-        return baos.toByteArray();
+        return documentGenerator.generatePdf(title, content.toString());
     }
     
     public byte[] genererCertificatCession(Commande commande, Vehicule vehicule) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
+        String title = "CERTIFICAT DE CESSION";
+        StringBuilder content = new StringBuilder();
         
-        document.add(new Paragraph("CERTIFICAT DE CESSION")
-            .setBold()
-            .setFontSize(16));
+        content.append("Je soussigné(e), représentant de Vehicules Online,\n");
+        content.append("certifie avoir cédé le véhicule suivant:\n\n");
         
-        document.add(new Paragraph("\nJe soussigné(e), représentant de Vehicules Online,"));
-        document.add(new Paragraph("certifie avoir cédé le véhicule suivant:"));
-        
-        document.add(new Paragraph("\nDÉSIGNATION DU VÉHICULE:")
-            .setBold());
-        
-        // Informations véhicule
-        document.add(new Paragraph("Marque: " + vehicule.getMarque()));
-        document.add(new Paragraph("Modèle: " + vehicule.getModele()));
-        document.add(new Paragraph("Type: " + vehicule.getType()));
+        content.append("DÉSIGNATION DU VÉHICULE:\n");
+        content.append("========================\n");
+        content.append("Marque: ").append(vehicule.getMarque()).append("\n");
+        content.append("Modèle: ").append(vehicule.getModele()).append("\n");
+        content.append("Type: ").append(vehicule.getType()).append("\n");
         
         // Informations client
         if (commande.getClient() != null) {
-            document.add(new Paragraph("\nÀ: " + commande.getClient().getNom()));
+            content.append("\nÀ: ").append(commande.getClient().getNom()).append("\n");
             
             if (commande.getClient() instanceof Societe) {
                 Societe societe = (Societe) commande.getClient();
-                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
-                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+                content.append("Raison sociale: ").append(societe.getRaisonSociale()).append("\n");
+                content.append("SIRET: ").append(societe.getSiret()).append("\n");
+            } else if (commande.getClient() instanceof ClientParticulier) {
+                ClientParticulier particulier = (ClientParticulier) commande.getClient();
+                content.append("Prénom: ").append(particulier.getPrenom()).append("\n");
             }
         }
         
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        document.add(new Paragraph("\n\nLe " + sdf.format(new Date())));
+        content.append("\n\nLe ").append(sdf.format(new Date())).append("\n");
         
-        document.add(new Paragraph("\n\nCachet et signature du cédant:"));
-        document.add(new Paragraph("\n___________________"));
+        content.append("\n\nCachet et signature du cédant:\n");
+        content.append("___________________");
         
-        document.close();
-        return baos.toByteArray();
+        return documentGenerator.generatePdf(title, content.toString());
     }
     
     public byte[] genererBonCommande(Commande commande) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
-        
-        document.add(new Paragraph("BON DE COMMANDE N°" + commande.getId())
-            .setBold()
-            .setFontSize(16));
+        String title = "BON DE COMMANDE N°" + commande.getId();
+        StringBuilder content = new StringBuilder();
         
         // En-tête
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-        document.add(new Paragraph("Date: " + sdf.format(commande.getDateCreation())));
+        content.append("Date: ").append(sdf.format(commande.getDateCreation())).append("\n\n");
         
         // Informations client
         if (commande.getClient() != null) {
-            document.add(new Paragraph("\nCLIENT:"));
-            document.add(new Paragraph("Nom: " + commande.getClient().getNom()));
-            document.add(new Paragraph("Type: " + commande.getClient().getType()));
+            content.append("CLIENT:\n");
+            content.append("=======\n");
+            content.append("Nom: ").append(commande.getClient().getNom()).append("\n");
+            content.append("Type: ").append(commande.getClient().getType()).append("\n");
             
             if (commande.getClient() instanceof Societe) {
                 Societe societe = (Societe) commande.getClient();
-                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
-                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+                content.append("Raison sociale: ").append(societe.getRaisonSociale()).append("\n");
+                content.append("SIRET: ").append(societe.getSiret()).append("\n");
+            } else if (commande.getClient() instanceof ClientParticulier) {
+                ClientParticulier particulier = (ClientParticulier) commande.getClient();
+                content.append("Prénom: ").append(particulier.getPrenom()).append("\n");
             }
+            content.append("\n");
         }
         
         // Détails commande
         if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
-            document.add(new Paragraph("\nDÉTAILS DE LA COMMANDE:")
-                .setBold());
-            
-            Table table = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2})).useAllAvailableWidth();
-            table.addHeaderCell("Désignation");
-            table.addHeaderCell("Quantité");
-            table.addHeaderCell("Prix Unitaire");
+            content.append("DÉTAILS DE LA COMMANDE:\n");
+            content.append("======================\n");
             
             for (LigneCommande ligne : commande.getLignes()) {
-                table.addCell(ligne.getVehicule().getMarque() + " " + ligne.getVehicule().getModele());
-                table.addCell(String.valueOf(ligne.getQuantite()));
-                table.addCell(ligne.getPrixUnitaire() + " €");
+                content.append("- ").append(ligne.getVehicule().getMarque())
+                      .append(" ").append(ligne.getVehicule().getModele())
+                      .append(" | Qté: ").append(ligne.getQuantite())
+                      .append(" | Prix unitaire: ").append(ligne.getPrixUnitaire()).append(" €\n");
+                
+                // Options si présentes
+                if (ligne.getOptions() != null && !ligne.getOptions().isEmpty()) {
+                    for (OptionVehicule option : ligne.getOptions()) {
+                        content.append("  + Option: ").append(option.getNom())
+                              .append(" (").append(option.getPrix()).append(" €)\n");
+                    }
+                }
             }
-            
-            document.add(table);
+            content.append("\n");
         }
         
         // Total
-        document.add(new Paragraph("\n\nTOTAL: " + 
-            (commande.getMontantTotal() != null ? commande.getMontantTotal() + " €" : "0 €"))
-            .setBold()
-            .setFontSize(14));
+        content.append("TOTAL: ").append(commande.getMontantTotal() != null ? 
+            commande.getMontantTotal() + " €" : "0 €").append("\n\n");
         
-        document.add(new Paragraph("\n\nSignature du client:"));
-        document.add(new Paragraph("\n___________________"));
+        content.append("Signature du client:\n");
+        content.append("___________________");
         
-        document.close();
-        return baos.toByteArray();
+        return documentGenerator.generatePdf(title, content.toString());
     }
     
     public byte[] genererFacture(Commande commande) throws IOException {
-        return genererBonCommande(commande); // Pour l'instant, même contenu
-    }
-    
-    public byte[] genererContratCredit(CommandeCredit commande) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
+        String title = "FACTURE N°" + commande.getId();
+        StringBuilder content = new StringBuilder();
         
-        document.add(new Paragraph("CONTRAT DE CRÉDIT")
-            .setBold()
-            .setFontSize(16));
-        
-        document.add(new Paragraph("\nContrat N°: " + commande.getId()));
-        document.add(new Paragraph("Date: " + new SimpleDateFormat("dd/MM/yyyy").format(new Date())));
-        
-        // Informations crédit
-        if (commande.getFinancement() != null) {
-            document.add(new Paragraph("\nDÉTAILS DU FINANCEMENT:")
-                .setBold());
-            
-            document.add(new Paragraph("Montant financé: " + commande.getMontantTotal() + " €"));
-            document.add(new Paragraph("Durée: " + ((CommandeCredit) commande).getDureeMois() + " mois"));
-            document.add(new Paragraph("Taux: " + ((CommandeCredit) commande).getTauxInteret() + " %"));
-            document.add(new Paragraph("Mensualité: " + ((CommandeCredit) commande).getTauxInteret() + " €"));
-        }
+        // En-tête
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        content.append("Date: ").append(sdf.format(commande.getDateCreation())).append("\n\n");
         
         // Informations client
         if (commande.getClient() != null) {
-            document.add(new Paragraph("\nINFORMATIONS EMPRUNTEUR:")
-                .setBold());
-            
-            document.add(new Paragraph("Nom: " + commande.getClient().getNom()));
+            content.append("CLIENT:\n");
+            content.append("=======\n");
+            content.append("Nom: ").append(commande.getClient().getNom()).append("\n");
+            content.append("Type: ").append(commande.getClient().getType()).append("\n");
             
             if (commande.getClient() instanceof Societe) {
                 Societe societe = (Societe) commande.getClient();
-                document.add(new Paragraph("Raison sociale: " + societe.getRaisonSociale()));
-                document.add(new Paragraph("SIRET: " + societe.getSiret()));
+                content.append("Raison sociale: ").append(societe.getRaisonSociale()).append("\n");
+                content.append("SIRET: ").append(societe.getSiret()).append("\n");
+                content.append("TVA Intracommunautaire: [N° TVA]\n");
+            } else if (commande.getClient() instanceof ClientParticulier) {
+                ClientParticulier particulier = (ClientParticulier) commande.getClient();
+                content.append("Prénom: ").append(particulier.getPrenom()).append("\n");
+            }
+            content.append("\n");
+        }
+        
+        // Détails commande
+        if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
+            content.append("DÉTAILS DE LA FACTURE:\n");
+            content.append("=====================\n");
+            
+            for (LigneCommande ligne : commande.getLignes()) {
+                content.append("- ").append(ligne.getVehicule().getMarque())
+                      .append(" ").append(ligne.getVehicule().getModele())
+                      .append(" | Qté: ").append(ligne.getQuantite())
+                      .append(" | Prix: ").append(ligne.getPrixUnitaire()).append(" €")
+                      .append(" | Total: ").append(ligne.getPrixTotal()).append(" €\n");
+            }
+            content.append("\n");
+        }
+        
+        // Total
+        BigDecimal montantTotal = commande.getMontantTotal() != null ? 
+            commande.getMontantTotal() : BigDecimal.ZERO;
+        BigDecimal tva = montantTotal.multiply(new BigDecimal("0.20"));
+        BigDecimal totalTTC = montantTotal.add(tva);
+        
+        content.append("SOUS-TOTAL: ").append(montantTotal).append(" €\n");
+        content.append("TVA (20%): ").append(tva).append(" €\n");
+        content.append("TOTAL TTC: ").append(totalTTC).append(" €\n\n");
+        
+        content.append("Signature du client:\n");
+        content.append("___________________");
+        
+        return documentGenerator.generatePdf(title, content.toString());
+    }
+    
+    public byte[] genererContratCredit(CommandeCredit commande) throws IOException {
+        String title = "CONTRAT DE CRÉDIT N°" + commande.getId();
+        StringBuilder content = new StringBuilder();
+        
+        content.append("Date: ").append(new SimpleDateFormat("dd/MM/yyyy").format(new Date())).append("\n\n");
+        
+        // Informations crédit
+        content.append("DÉTAILS DU FINANCEMENT:\n");
+        content.append("======================\n");
+        
+        // CORRECTION : Afficher directement la valeur du taux d'intérêt sans cast
+        content.append("Montant financé: ").append(commande.getMontantTotal()).append(" €\n");
+        content.append("Durée: ").append(commande.getDureeMois()).append(" mois\n");
+        content.append("Taux d'intérêt: ").append(commande.getTauxInteret()).append(" %\n");
+        
+        // Obtenir la valeur du taux d'intérêt selon son type
+        BigDecimal tauxInteret;
+        Object tauxInteretObj = commande.getTauxInteret();
+        
+        if (tauxInteretObj instanceof BigDecimal) {
+            tauxInteret = (BigDecimal) tauxInteretObj;
+        } else if (tauxInteretObj instanceof Double) {
+            tauxInteret = BigDecimal.valueOf((Double) tauxInteretObj);
+        } else if (tauxInteretObj instanceof Integer) {
+            tauxInteret = BigDecimal.valueOf((Integer) tauxInteretObj);
+        } else if (tauxInteretObj instanceof Long) {
+            tauxInteret = BigDecimal.valueOf((Long) tauxInteretObj);
+        } else if (tauxInteretObj instanceof String) {
+            tauxInteret = new BigDecimal((String) tauxInteretObj);
+        } else if (tauxInteretObj instanceof Number) {
+            tauxInteret = BigDecimal.valueOf(((Number) tauxInteretObj).doubleValue());
+        } else {
+            tauxInteret = BigDecimal.ZERO;
+        }
+        
+        // Calcul de la mensualité
+        BigDecimal montant = commande.getMontantTotal();
+        BigDecimal tauxMensuelDecimal = tauxInteret
+            .divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP)
+            .divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+        int duree = commande.getDureeMois();
+        
+        // Formule de la mensualité : M = P × [r(1+r)^n] / [(1+r)^n - 1]
+        BigDecimal unPlusR = BigDecimal.ONE.add(tauxMensuelDecimal);
+        BigDecimal unPlusRpuissanceN = unPlusR.pow(duree);
+        BigDecimal numerateur = tauxMensuelDecimal.multiply(unPlusRpuissanceN);
+        BigDecimal denominateur = unPlusRpuissanceN.subtract(BigDecimal.ONE);
+        BigDecimal mensualite = montant.multiply(numerateur).divide(denominateur, 2, RoundingMode.HALF_UP);
+        
+        BigDecimal coutTotalCredit = mensualite.multiply(BigDecimal.valueOf(duree)).subtract(montant);
+        
+        content.append("Mensualité: ").append(mensualite).append(" €\n");
+        content.append("Coût total du crédit: ").append(coutTotalCredit).append(" €\n\n");
+        
+        // Informations client
+        if (commande.getClient() != null) {
+            content.append("INFORMATIONS EMPRUNTEUR:\n");
+            content.append("======================\n");
+            content.append("Nom: ").append(commande.getClient().getNom()).append("\n");
+            
+            if (commande.getClient() instanceof Societe) {
+                Societe societe = (Societe) commande.getClient();
+                content.append("Raison sociale: ").append(societe.getRaisonSociale()).append("\n");
+                content.append("SIRET: ").append(societe.getSiret()).append("\n");
+                content.append("TVA Intracommunautaire: [N° TVA]\n");
+            } else if (commande.getClient() instanceof ClientParticulier) {
+                ClientParticulier particulier = (ClientParticulier) commande.getClient();
+                content.append("Prénom: ").append(particulier.getPrenom()).append("\n");
             }
         }
         
-        document.add(new Paragraph("\n\nSignature de l'emprunteur:"));
-        document.add(new Paragraph("\n___________________"));
+        content.append("\n\nARTICLE 1 - OBJET DU CONTRAT\n");
+        content.append("Le présent contrat a pour objet de définir les conditions de crédit.\n\n");
         
-        document.add(new Paragraph("\n\nSignature du prêteur:"));
-        document.add(new Paragraph("\n___________________"));
+        content.append("ARTICLE 2 - ENGAGEMENTS\n");
+        content.append("L'emprunteur s'engage à rembourser le crédit selon les échéances prévues.\n\n");
         
-        document.close();
-        return baos.toByteArray();
+        content.append("Signature de l'emprunteur:\n");
+        content.append("___________________\n\n");
+        
+        content.append("Signature du prêteur:\n");
+        content.append("___________________");
+        
+        return documentGenerator.generatePdf(title, content.toString());
+    }
+    
+    // Méthode pour générer du HTML au lieu du PDF (démontre la flexibilité de l'adapter)
+    public String genererDocumentHTML(Commande commande, TypeDocument type) throws IOException {
+        String title;
+        StringBuilder content = new StringBuilder();
+        
+        switch (type) {
+            case IMMATRICULATION:
+                title = "Demande d'immatriculation";
+                content.append("Commande N°: ").append(commande.getId()).append("<br>");
+                content.append("Date: ").append(new SimpleDateFormat("dd/MM/yyyy").format(new Date())).append("<br>");
+                break;
+                
+            case CESSION:
+                title = "Certificat de cession";
+                content.append("Certificat pour la commande N°: ").append(commande.getId()).append("<br>");
+                break;
+                
+            case BON_COMMANDE:
+                title = "Bon de commande";
+                content.append("Bon de commande N°: ").append(commande.getId()).append("<br>");
+                break;
+                
+            default:
+                title = "Document";
+                content.append("Document pour la commande N°: ").append(commande.getId()).append("<br>");
+        }
+        
+        return documentGenerator.generateHtml(title, content.toString());
     }
 }

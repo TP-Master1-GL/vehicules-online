@@ -1,5 +1,6 @@
-import React from 'react'
+import React from 'react';
 
+// Composant Card principal
 const Card = ({
   children,
   title,
@@ -51,7 +52,26 @@ const Card = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Card
+// Composants auxiliaires pour la compatibilité
+export const CardHeader = ({ children, className = '' }) => (
+  <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
+    {children}
+  </div>
+);
+
+export const CardTitle = ({ children, className = '' }) => (
+  <h3 className={`text-lg font-semibold text-primary-dark ${className}`}>
+    {children}
+  </h3>
+);
+
+export const CardContent = ({ children, className = '', noPadding = false }) => (
+  <div className={`${noPadding ? '' : 'p-6'} ${className}`}>
+    {children}
+  </div>
+);
+
+export default Card;

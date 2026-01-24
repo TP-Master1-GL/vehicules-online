@@ -1,13 +1,17 @@
-// src/main/java/com/vehicules/pdf/services/LiasseViergeService.java
 package com.vehicules.pdf.services;
 
 import com.vehicules.patterns.singleton.LiasseVierge;
+import com.vehicules.patterns.adapter.DocumentGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class LiasseViergeService {
+    
+    @Autowired
+    private DocumentGenerator documentGenerator;
     
     public List<String> getDocumentsVierges() {
         return LiasseVierge.getInstance().getDocuments();
@@ -33,14 +37,9 @@ public class LiasseViergeService {
     }
     
     private byte[] generatePdfFromTemplate(String template) {
-        // Utiliser le DocumentGenerator pour créer un PDF à partir du template
-        // Adaptateur pour la génération PDF
-        com.vehicules.patterns.adapter.DocumentGenerator generator = 
-            new com.vehicules.patterns.adapter.ItextPdfAdapter();
-        
         String title = "Document Vierge";
         String content = "Ceci est un document vierge prêt à être rempli.\n\n" + template;
         
-        return generator.generatePdf(title, content);
+        return documentGenerator.generatePdf(title, content);
     }
 }

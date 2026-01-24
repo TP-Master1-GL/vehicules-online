@@ -4,15 +4,12 @@ import com.vehicules.core.entities.Client;
 import com.vehicules.core.entities.ClientParticulier;
 import com.vehicules.core.entities.Societe;
 import com.vehicules.repositories.ClientRepository;
+import com.vehicules.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.Collections;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -42,11 +39,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             role = "USER"; // Les sociétés ont le rôle USER par défaut
         }
 
-        return User.builder()
-                .username(client.getEmail())
-                .password(password)
-                .disabled(!enabled)
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)))
-                .build();
+        return new CustomUserDetails(client, password, enabled, role);
     }
 }

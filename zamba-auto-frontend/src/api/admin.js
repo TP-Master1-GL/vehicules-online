@@ -212,28 +212,45 @@ const adminService = {
   },
 
   // ========== GESTION DES IMAGES ==========
-  uploadVehiculeImage: async (vehiculeId, file, isMain = false) => {
+  uploadVehiculeImage: async (vehiculeId, formData) => {
     try {
-      console.log(`📸 [ADMIN] Upload image pour véhicule ID ${vehiculeId}, isMain: ${isMain}`)
-      
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('isMain', isMain)
-      
-      const response = await api.post(`/admin/vehicules/${vehiculeId}/upload-image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      console.log(`📸 [ADMIN] Upload image pour véhicule ID ${vehiculeId}`)
+      console.log('📋 FormData reçu:', {
+        hasFile: formData.has('file'),
+        hasIsMain: formData.has('isMain'),
+        keys: Array.from(formData.keys())
       })
+      
+      const response = await api.post(
+        `/admin/vehicules/${vehiculeId}/upload-image`, 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          // Ajouter un timeout plus long pour les images
+          timeout: 60000 // 60 secondes
+        }
+      )
+      
       console.log('✅ [ADMIN] Image uploadée:', response.data)
       return response.data
     } catch (error) {
       console.error(`❌ [ADMIN] Erreur uploadVehiculeImage ${vehiculeId}:`, {
         status: error.response?.status,
         data: error.response?.data,
-        message: error.message
+        message: error.message,
+        requestData: formData ? {
+          hasFile: formData.has('file'),
+          fileSize: formData.get('file')?.size
+        } : 'No formData'
       })
-      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Erreur lors de l\'upload de l\'image')
+      
+      let errorMessage = 'Erreur lors de l\'upload de l\'image'
+      if (error.response?.data) {
+        errorMessage = error.response.data.error || error.response.data.message || errorMessage
+      }
+      throw new Error(errorMessage)
     }
   },
 

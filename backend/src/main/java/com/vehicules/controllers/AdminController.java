@@ -8,6 +8,7 @@ import com.vehicules.repositories.*;
 import com.vehicules.services.CatalogueService;
 import com.vehicules.services.VehicleDisplayService;
 import com.vehicules.services.VehiculeImageService;
+import com.vehicules.services.VehiculeFactoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,9 @@ public class AdminController {
     
     @Autowired
     private VehiculeImageService vehiculeImageService;
+
+    @Autowired
+    private VehiculeFactoryService vehiculeFactoryService;
 
     // ========== ENDPOINTS DE TEST ==========
     
@@ -187,18 +191,34 @@ public class AdminController {
         }
     }
 
+
     @PostMapping("/vehicules")
     public ResponseEntity<?> createVehicule(@RequestBody Map<String, Object> vehiculeData) {
         try {
-            log.info("📥 [ADMIN] Données reçues création véhicule: {}", vehiculeData);
+            log.info("🚗 [ADMIN] Création véhicule avec Abstract Factory corrigé");
             
-            Vehicule vehicule = convertMapToVehiculeEntity(vehiculeData, null);
+            // 1. Extraire les données
+            String type = getValueAsString(vehiculeData, "typeVehicule", "type", "AUTOMOBILE");
+            String energie = getValueAsString(vehiculeData, "typeCarburant", "energie", "ESSENCE");
+            String marque = getValueAsString(vehiculeData, "marque", "Inconnue");
+            String modele = getValueAsString(vehiculeData, "modele", "Inconnu");
+            BigDecimal prix = getValueAsBigDecimal(vehiculeData, "prix", "prixBase", BigDecimal.valueOf(15000000));
+            
+            // 2. Utiliser Abstract Factory pour créer le véhicule
+            Vehicule vehicule = vehiculeFactoryService.creerVehicule(
+                type, energie, marque, modele, prix, vehiculeData
+            );
+            
+            // 3. Appliquer les propriétés supplémentaires
+            updateCommonProperties(vehicule, vehiculeData);
+            
+            // 4. Sauvegarder
             Vehicule saved = vehiculeRepository.save(vehicule);
             
-            log.info("✅ [ADMIN] Véhicule créé avec ID: {}", saved.getId());
+            log.info("✅ [ADMIN] Véhicule créé via Abstract Factory - ID: {}, Type: {}, Energie: {}", 
+                    saved.getId(), type, energie);
             
-            VehiculeDTO dto = convertToDTO(saved);
-            return ResponseEntity.ok(dto);
+            return ResponseEntity.ok(convertToDTO(saved));
             
         } catch (Exception e) {
             log.error("❌ [ADMIN] Erreur création véhicule: {}", e.getMessage(), e);
@@ -206,6 +226,26 @@ public class AdminController {
                     .body(Map.of("error", "Erreur création véhicule: " + e.getMessage()));
         }
     }
+
+    // @PostMapping("/vehicules")
+    // public ResponseEntity<?> createVehicule(@RequestBody Map<String, Object> vehiculeData) {
+    //     try {
+    //         log.info("📥 [ADMIN] Données reçues création véhicule: {}", vehiculeData);
+            
+    //         Vehicule vehicule = convertMapToVehiculeEntity(vehiculeData, null);
+    //         Vehicule saved = vehiculeRepository.save(vehicule);
+            
+    //         log.info("✅ [ADMIN] Véhicule créé avec ID: {}", saved.getId());
+            
+    //         VehiculeDTO dto = convertToDTO(saved);
+    //         return ResponseEntity.ok(dto);
+            
+    //     } catch (Exception e) {
+    //         log.error("❌ [ADMIN] Erreur création véhicule: {}", e.getMessage(), e);
+    //         return ResponseEntity.badRequest()
+    //                 .body(Map.of("error", "Erreur création véhicule: " + e.getMessage()));
+    //     }
+    // }
 
     @PutMapping("/vehicules/{id}")
     public ResponseEntity<?> updateVehicule(@PathVariable Long id, @RequestBody Map<String, Object> vehiculeData) {
@@ -554,7 +594,8 @@ public class AdminController {
         if (existingVehicule != null) {
             vehicule = existingVehicule;
         } else {
-            vehicule = createNewVehiculeInstance(type, energie);
+            // CORRECTION : Passer le paramètre data manquant
+            vehicule = createNewVehiculeInstance(type, energie, data);  // ← Ajout du 3ème paramètre
         }
         
         updateCommonProperties(vehicule, data);
@@ -562,21 +603,24 @@ public class AdminController {
         
         return vehicule;
     }
-    
-    private Vehicule createNewVehiculeInstance(String type, String energie) {
-        if ("AUTOMOBILE".equalsIgnoreCase(type)) {
-            if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
-                return new AutomobileElectrique();
-            } else {
-                return new AutomobileEssence();
-            }
-        } else { // SCOOTER
-            if ("ELECTRIQUE".equalsIgnoreCase(energie)) {
-                return new ScooterElectrique();
-            } else {
-                return new ScooterEssence();
-            }
-        }
+        
+    private Vehicule createNewVehiculeInstance(String type, String energie, Map<String, Object> data) {
+        log.info("🏭 Création véhicule avec Abstract Factory - Type: {}, Energie: {}", type, energie);
+        
+        // Extraire les données nécessaires
+        String marque = getValueAsString(data, "marque", "Inconnue");
+        String modele = getValueAsString(data, "modele", "Inconnu");
+        BigDecimal prix = getValueAsBigDecimal(data, "prix", "prixBase", BigDecimal.valueOf(15000000));
+        
+        // Utiliser le service Abstract Factory
+        return vehiculeFactoryService.creerVehicule(
+            type,          // "AUTOMOBILE" ou "SCOOTER"
+            energie,       // "ESSENCE" ou "ELECTRIQUE"
+            marque,        // Marque du véhicule
+            modele,        // Modèle du véhicule
+            prix,          // Prix de base
+            data           // Options supplémentaires
+        );
     }
     
     private void updateCommonProperties(Vehicule vehicule, Map<String, Object> data) {

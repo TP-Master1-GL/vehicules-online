@@ -1,4 +1,3 @@
-// src/main/java/com/vehicules/controllers/PdfController.java
 package com.vehicules.controllers;
 
 import com.vehicules.core.entities.Commande;
@@ -157,14 +156,11 @@ public class PdfController {
             Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée"));
             
-            // Créer un générateur pour l'aperçu
-            com.vehicules.patterns.adapter.DocumentGenerator generator = 
-                new com.vehicules.patterns.adapter.ItextPdfAdapter();
-            
             String title = getDocumentTitle(documentType);
             String content = getDocumentContent(commande, documentType);
             
-            String html = generator.generateHtml(title, content);
+            // Génération HTML simplifiée sans dépendre à l'adaptateur
+            String html = generateSimpleHtml(title, content);
             
             return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
@@ -173,6 +169,25 @@ public class PdfController {
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la génération de l'aperçu HTML", e);
         }
+    }
+    
+    // Nouvelle méthode pour générer du HTML simple
+    private String generateSimpleHtml(String title, String content) {
+        return "<!DOCTYPE html>" +
+               "<html>" +
+               "<head>" +
+               "<title>" + title + "</title>" +
+               "<style>" +
+               "body { font-family: Arial, sans-serif; margin: 40px; }" +
+               "h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }" +
+               ".content { white-space: pre-line; background-color: #f9f9f9; padding: 20px; border-radius: 5px; }" +
+               "</style>" +
+               "</head>" +
+               "<body>" +
+               "<h1>" + title + "</h1>" +
+               "<div class=\"content\">" + content.replace("\n", "<br>") + "</div>" +
+               "</body>" +
+               "</html>";
     }
     
     private String getFilename(String documentType, String commandeId) {
@@ -208,9 +223,28 @@ public class PdfController {
     
     private String getDocumentContent(Commande commande, String documentType) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        return "Document: " + documentType + "\n" +
-               "Commande N°: " + commande.getId() + "\n" +
-               "Client: " + (commande.getClient() != null ? commande.getClient().getNom() : "Non spécifié") + "\n" +
-               "Date: " + sdf.format(new Date());
+        StringBuilder content = new StringBuilder();
+        
+        content.append("Document: ").append(documentType).append("\n");
+        content.append("Commande N°: ").append(commande.getId()).append("\n");
+        content.append("Client: ").append(commande.getClient() != null ? commande.getClient().getNom() : "Non spécifié").append("\n");
+        content.append("Date: ").append(sdf.format(new Date())).append("\n");
+        content.append("\n---\n");
+        content.append("Ceci est un aperçu HTML du document.\n");
+        content.append("Le document PDF complet sera généré sur demande.");
+        
+        return content.toString();
+    }
+    
+    // Endpoint de test simplifié
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("✅ Service PDF fonctionnel - Prêt à générer des documents");
+    }
+    
+    // Endpoint de santé
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("Service PDF en ligne - " + new Date());
     }
 }

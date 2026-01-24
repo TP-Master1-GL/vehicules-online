@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import documentService from '../api/documents'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
+import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import Alert from '../components/ui/Alert'

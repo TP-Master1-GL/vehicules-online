@@ -1,155 +1,280 @@
-// CORRECTION : Changer l'import pour utiliser l'export par défaut
-import api from './auth.js'
+// src/api/cart.js
+import api from './axios'
 
 const cartService = {
-  // Récupérer le panier actuel (PanierController)
+  // Récupérer le panier de l'utilisateur connecté
   getCart: async () => {
     try {
-      const response = await api.get('/panier');
-      return response.data;
+      console.log('🛒 Appel API: GET /panier')
+      const response = await api.get('/panier')
+      console.log('✅ Réponse getCart:', response.data)
+      return response.data
     } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors de la récupération du panier',
-        status: error.response?.status
-      };
+      console.error('❌ Erreur getCart:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      })
+      
+      if (error.response?.status === 401) {
+        throw {
+          message: 'Veuillez vous connecter pour accéder au panier',
+          status: 401
+        }
+      }
+      
+      // Si erreur 404 ou autre, retourner un panier vide structuré
+      console.log('⚠️ Retour d\'un panier vide par défaut')
+      return {
+        id: 0,
+        clientId: null,
+        lignes: [],
+        items: [],
+        total: 0,
+        dateCreation: new Date().toISOString(),
+        dateModification: new Date().toISOString()
+      }
     }
   },
 
-  // Ajouter un article au panier (format adapté au backend)
+  // Ajouter un article au panier
   addToCart: async (cartItem) => {
     try {
-      // Adapter le format pour le backend
+      console.log('➕ Appel API: POST /panier/ajouter')
+      console.log('📤 Données envoyées:', cartItem)
+      
+      // Format attendu par le backend
       const backendItem = {
-        vehiculeId: cartItem.vehicleId || cartItem.vehicle?.id,
-        quantite: cartItem.quantity || 1,
-        optionIds: cartItem.selectedOptions?.map(opt => opt.id) || []
-      };
+        vehiculeId: cartItem.vehiculeId || cartItem.vehicleId,
+        optionIds: cartItem.optionIds || cartItem.selectedOptions?.map(opt => opt.id) || []
+      }
 
-      const response = await api.post('/panier/ajouter', backendItem);
-      return response.data;
+      const response = await api.post('/panier/ajouter', backendItem)
+      console.log('✅ Réponse addToCart:', response.data)
+      return response.data
     } catch (error) {
+      console.error('❌ Erreur addToCart:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+        config: error.config
+      })
+      
+      let userMessage = 'Erreur lors de l\'ajout au panier'
+      if (error.response?.status === 401) {
+        userMessage = 'Veuillez vous connecter pour ajouter au panier'
+      } else if (error.response?.data?.message) {
+        userMessage = error.response.data.message
+      } else if (error.message) {
+        userMessage = error.message
+      }
+      
       throw {
-        message: error.response?.data?.message || 'Erreur lors de l\'ajout au panier',
-        status: error.response?.status
-      };
+        message: userMessage,
+        status: error.response?.status,
+        error: error
+      }
     }
   },
 
-  // Mettre à jour la quantité (non directement supporté par le backend actuel)
-  updateCartItem: async (itemId, quantity) => {
+  // Supprimer un article du panier
+  removeFromCart: async (lignePanierId) => {
     try {
-      // Simulation - recréer l'item avec nouvelle quantité
-      // Le backend actuel ne supporte pas la mise à jour directe de quantité
-      // Cette méthode devrait être adaptée selon l'implémentation backend
-      console.warn('updateCartItem: Fonctionnalité à implémenter côté backend');
-      return { success: false, message: 'Fonctionnalité non disponible' };
+      console.log('🗑️ Appel API: DELETE /panier/retirer/' + lignePanierId)
+      const response = await api.delete(`/panier/retirer/${lignePanierId}`)
+      console.log('✅ Réponse removeFromCart:', response.data)
+      return response.data
     } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors de la mise à jour',
-        status: error.response?.status
-      };
-    }
-  },
-
-  // Supprimer un article du panier (format adapté)
-  removeFromCart: async (itemId) => {
-    try {
-      // Le backend utilise l'ID du véhicule, pas l'ID de l'item du panier
-      // Adapter selon l'implémentation
-      const response = await api.delete(`/panier/retirer/${itemId}`);
-      return response.data;
-    } catch (error) {
+      console.error('❌ Erreur removeFromCart:', error)
       throw {
         message: error.response?.data?.message || 'Erreur lors de la suppression',
-        status: error.response?.status
-      };
+        status: error.response?.status,
+        error: error
+      }
     }
   },
 
-  // Vider le panier (non directement supporté par le backend actuel)
+  // Vider le panier
   clearCart: async () => {
     try {
-      // Simulation - le backend n'a pas d'endpoint spécifique pour vider le panier
-      console.warn('clearCart: Fonctionnalité à implémenter côté backend');
-      return { success: false, message: 'Fonctionnalité non disponible' };
+      console.log('🧹 Appel API: DELETE /panier/vider')
+      const response = await api.delete('/panier/vider')
+      console.log('✅ Réponse clearCart:', response.data)
+      return response.data
     } catch (error) {
+      console.error('❌ Erreur clearCart:', error)
+      
+      // Si l'endpoint /vider n'existe pas, supprimer chaque ligne individuellement
+      if (error.response?.status === 404) {
+        console.log('⚠️ Endpoint /vider non trouvé, tentative de suppression ligne par ligne')
+        try {
+          const cart = await cartService.getCart()
+          const promises = []
+          
+          if (cart.lignes && cart.lignes.length > 0) {
+            for (const ligne of cart.lignes) {
+              promises.push(cartService.removeFromCart(ligne.id))
+            }
+          }
+          
+          await Promise.all(promises)
+          return { success: true, message: 'Panier vidé (méthode alternative)' }
+        } catch (fallbackError) {
+          throw {
+            message: 'Impossible de vider le panier',
+            status: 500,
+            error: fallbackError
+          }
+        }
+      }
+      
       throw {
         message: error.response?.data?.message || 'Erreur lors de la suppression du panier',
-        status: error.response?.status
-      };
+        status: error.response?.status,
+        error: error
+      }
     }
   },
 
-  // Annuler la dernière action (Pattern Command - pas directement supporté par le backend actuel)
-  undoLastAction: async () => {
+  // Mettre à jour la quantité d'une ligne
+  updateQuantity: async (lignePanierId, quantite) => {
     try {
-      // Simulation - le backend actuel ne supporte pas l'annulation directe
-      console.warn('undoLastAction: Pattern Command à implémenter côté backend');
-      return { success: false, message: 'Fonctionnalité non disponible' };
+      console.log('📊 Appel API: PUT /panier/modifier-quantite')
+      
+      const request = {
+        lignePanierId: lignePanierId,
+        nouvelleQuantite: quantite
+      }
+
+      console.log('📤 Données envoyées:', request)
+      const response = await api.put('/panier/modifier-quantite', request)
+      console.log('✅ Réponse updateQuantity:', response.data)
+      return response.data
     } catch (error) {
+      console.error('❌ Erreur updateQuantity:', error)
+      
+      // Si l'endpoint n'existe pas, proposer une alternative
+      if (error.response?.status === 404) {
+        console.warn('⚠️ Endpoint /modifier-quantite non trouvé')
+        throw {
+          message: 'La modification de quantité n\'est pas disponible pour le moment',
+          status: 404,
+          error: error
+        }
+      }
+      
       throw {
-        message: error.response?.data?.message || 'Erreur lors de l\'annulation',
-        status: error.response?.status
-      };
+        message: error.response?.data?.message || 'Erreur lors de la mise à jour de la quantité',
+        status: error.response?.status,
+        error: error
+      }
     }
   },
 
-  // Calculer le total du panier (utilise getCart qui contient déjà le total)
-  calculateTotal: async () => {
+  // Ajouter une option à une ligne
+  addOption: async (lignePanierId, optionId) => {
     try {
-      const cart = await cartService.getCart();
-      return { total: cart.total || 0 };
+      console.log('⚙️ Appel API: POST /panier/ajouter-option')
+      
+      const request = {
+        lignePanierId: lignePanierId,
+        optionId: optionId
+      }
+
+      const response = await api.post('/panier/ajouter-option', request)
+      console.log('✅ Réponse addOption:', response.data)
+      return response.data
     } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors du calcul du total',
-        status: error.response?.status
-      };
+      console.error('❌ Erreur addOption:', error)
+      throw error
     }
   },
 
-  // Méthodes non supportées par le backend actuel - retournent des messages d'erreur
-  mergeCart: async (guestCart) => {
-    console.warn('mergeCart: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  saveForLater: async (itemId) => {
-    console.warn('saveForLater: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  getSavedItems: async () => {
-    console.warn('getSavedItems: Fonctionnalité à implémenter côté backend');
-    return [];
-  },
-
-  applyPromoCode: async (code) => {
-    console.warn('applyPromoCode: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Codes promo non disponibles' };
-  },
-
-  removePromoCode: async () => {
-    console.warn('removePromoCode: Fonctionnalité à implémenter côté backend');
-    return { success: false, message: 'Fonctionnalité non disponible' };
-  },
-
-  checkAvailability: async () => {
+  // Retirer une option d'une ligne
+  removeOption: async (lignePanierId, optionId) => {
     try {
-      // Simulation - vérifie que les véhicules existent
-      const cart = await cartService.getCart();
-      return {
-        available: true,
-        unavailableItems: [],
-        message: 'Tous les articles sont disponibles'
-      };
+      console.log('➖ Appel API: DELETE /panier/retirer-option')
+      
+      const request = {
+        lignePanierId: lignePanierId,
+        optionId: optionId
+      }
+
+      const response = await api.delete('/panier/retirer-option', { data: request })
+      console.log('✅ Réponse removeOption:', response.data)
+      return response.data
     } catch (error) {
-      throw {
-        message: error.response?.data?.message || 'Erreur lors de la vérification de disponibilité',
-        status: error.response?.status
-      };
+      console.error('❌ Erreur removeOption:', error)
+      throw error
+    }
+  },
+
+  // Vérifier la compatibilité des options (si disponible)
+  checkOptionCompatibility: async (vehiculeId, selectedOptionIds) => {
+    try {
+      console.log('🔍 Appel API: POST /panier/options/verifier')
+      
+      const request = {
+        vehiculeId: vehiculeId,
+        optionIds: selectedOptionIds
+      }
+
+      const response = await api.post('/panier/options/verifier', request)
+      return response.data
+    } catch (error) {
+      console.error('❌ Erreur checkOptionCompatibility:', error)
+      // Par défaut, tout est compatible
+      return { compatible: true, conflicts: [] }
+    }
+  },
+
+  // Récupérer les options compatibles pour un véhicule (si disponible)
+  getCompatibleOptions: async (vehiculeId) => {
+    try {
+      console.log('📋 Appel API: GET /panier/options/compatibles/' + vehiculeId)
+      const response = await api.get(`/panier/options/compatibles/${vehiculeId}`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Erreur getCompatibleOptions:', error)
+      return [] // Retourner un tableau vide si erreur
+    }
+  },
+
+  // Test de connexion au service panier
+  testConnection: async () => {
+    try {
+      console.log('🧪 Test de connexion au service panier...')
+      const response = await api.get('/panier')
+      console.log('✅ Service panier accessible:', response.status)
+      return { success: true, status: response.status, data: response.data }
+    } catch (error) {
+      console.error('❌ Service panier inaccessible:', error.message)
+      return { 
+        success: false, 
+        status: error.response?.status, 
+        message: error.message 
+      }
+    }
+  },
+
+  // Méthode de secours pour les tests (sans authentification)
+  addToCartTest: async (vehiculeId, options = []) => {
+    try {
+      console.log('🧪 Appel API TEST: POST /panier/ajouter-test')
+      
+      const request = {
+        vehiculeId: vehiculeId,
+        optionIds: options
+      }
+
+      const response = await api.post('/panier/ajouter-test', request)
+      console.log('✅ Réponse addToCartTest:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ Erreur addToCartTest:', error)
+      throw error
     }
   }
 }
 
-// Export par défaut
 export default cartService

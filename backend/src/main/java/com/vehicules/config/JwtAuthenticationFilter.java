@@ -37,8 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         "/catalogue",      // Alternative
         "/api/societe",    // Routes société
         "/societe",        // Alternative
-        "/api/panier",     // Panier (public pour certaines actions)
-        "/panier",         // Alternative
+        // "/api/panier",     // Panier (public pour certaines actions)
+        // "/panier",         // Alternative
         "/swagger-ui",    // Documentation Swagger
         "/v3/api-docs",    // Spécification OpenAPI
         "/api-docs",      // Docs API

@@ -32,8 +32,8 @@ public class CatalogueService {
         try {
             log.info("Récupération du catalogue une ligne");
             
-            // Utiliser la méthode avec JOIN FETCH
-            List<Vehicule> vehicules = vehiculeRepository.findAllWithOptions();
+            // CORRECTION : Utiliser findAllWithImages() au lieu de findAllWithOptions()
+            List<Vehicule> vehicules = vehiculeRepository.findAllWithImages();
             
             Catalogue catalogue = new Catalogue(vehicules);
             
@@ -44,6 +44,11 @@ public class CatalogueService {
             }
             
             log.info("{} véhicules pour l'affichage une ligne", vehiculesUneLigne.size());
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehiculesUneLigne) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
             
             return vehiculesUneLigne.stream()
                     .map(vehicule -> {
@@ -64,8 +69,8 @@ public class CatalogueService {
         try {
             log.info("Récupération du catalogue trois lignes");
             
-            // Utiliser la méthode avec JOIN FETCH pour précharger les options
-            List<Vehicule> vehicules = vehiculeRepository.findAllWithOptions();
+            // CORRECTION : Utiliser findAllWithImages() au lieu de findAllWithOptions()
+            List<Vehicule> vehicules = vehiculeRepository.findAllWithImages();
             
             Catalogue catalogue = new Catalogue(vehicules);
             
@@ -76,6 +81,11 @@ public class CatalogueService {
             }
             
             log.info("{} véhicules pour l'affichage trois lignes", vehiculesTroisLignes.size());
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehiculesTroisLignes) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
             
             // NE PAS appeler displayService.afficherAvecDecorations() ici
             // Le mapper va déjà générer la description via sa propre logique
@@ -92,10 +102,15 @@ public class CatalogueService {
         try {
             log.info("Récupération des véhicules en solde");
             
-            // Utiliser la méthode avec JOIN FETCH
-            List<Vehicule> vehicules = vehiculeRepository.findByEnSoldeWithOptions(true);
+            // CORRECTION : Utiliser findByEnSoldeWithImages() au lieu de findByEnSoldeWithOptions()
+            List<Vehicule> vehicules = vehiculeRepository.findByEnSoldeWithImages(true);
             
             log.info("{} véhicules en solde trouvés", vehicules.size());
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehicules) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
             
             return vehicules.stream()
                     .map(vehicule -> {
@@ -116,12 +131,16 @@ public class CatalogueService {
         try {
             log.info("Récupération du véhicule par ID: {}", id);
             
-            // Utiliser la méthode optimisée avec JOIN FETCH
-            Vehicule vehicule = vehiculeRepository.findByIdWithAllRelations(id);
+            // CORRECTION : Utiliser findByIdWithImages() au lieu de findByIdWithAllRelations()
+            Optional<Vehicule> vehiculeOpt = vehiculeRepository.findByIdWithImages(id);
             
-            if (vehicule == null) {
+            if (vehiculeOpt.isEmpty()) {
                 throw new RuntimeException("Véhicule non trouvé avec l'id: " + id);
             }
+            
+            Vehicule vehicule = vehiculeOpt.get();
+            // Initialiser les options
+            vehicule.getOptions().size(); // Force l'initialisation
             
             VehiculeDTO dto = vehiculeMapper.toDTO(vehicule);
             String description = displayService.afficherAvecDecorations(vehicule);
@@ -137,7 +156,7 @@ public class CatalogueService {
     // Version alternative pour charger un véhicule simple (sans JOIN FETCH)
     public VehiculeDTO getVehiculeByIdSimple(Long id) {
         try {
-            Optional<Vehicule> vehiculeOpt = vehiculeRepository.findById(id);
+            Optional<Vehicule> vehiculeOpt = vehiculeRepository.findByIdForDetail(id);
             
             if (vehiculeOpt.isEmpty()) {
                 throw new RuntimeException("Véhicule non trouvé avec l'id: " + id);
@@ -146,13 +165,8 @@ public class CatalogueService {
             Vehicule vehicule = vehiculeOpt.get();
             
             // Initialiser manuellement les collections pour éviter LazyInitializationException
-            if (vehicule.getOptions() != null) {
-                vehicule.getOptions().size(); // Force l'initialisation
-            }
-            
-            if (vehicule.getImages() != null) {
-                vehicule.getImages().size(); // Force l'initialisation
-            }
+            vehicule.getOptions().size(); // Force l'initialisation
+            vehicule.getImages().size(); // Force l'initialisation
             
             VehiculeDTO dto = vehiculeMapper.toDTO(vehicule);
             String description = displayService.afficherAvecDecorations(vehicule);
@@ -192,7 +206,14 @@ public class CatalogueService {
     public List<VehiculeDTO> getNouveautes() {
         try {
             LocalDate dateLimite = LocalDate.now().minusDays(30);
-            List<Vehicule> vehicules = vehiculeRepository.findNouveautesWithOptions(dateLimite);
+            
+            // CORRECTION : Utiliser findNouveautesWithImages() au lieu de findNouveautesWithOptions()
+            List<Vehicule> vehicules = vehiculeRepository.findNouveautesWithImages(dateLimite);
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehicules) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
             
             return vehicules.stream()
                     .map(vehicule -> {
@@ -232,5 +253,62 @@ public class CatalogueService {
         stats.put("electricVehicles", vehiculeRepository.countByEnergie("ELECTRIQUE"));
         
         return stats;
+    }
+    
+    // NOUVELLE MÉTHODE : Pour les véhicules en solde avec images seulement (promotions)
+    public List<VehiculeDTO> getVehiculesEnSoldePromo() {
+        try {
+            log.info("Récupération des véhicules en solde (promo)");
+            
+            List<Vehicule> vehicules = vehiculeRepository.findVehiculesEnSoldeWithImages();
+            
+            log.info("{} véhicules en solde (promo) trouvés", vehicules.size());
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehicules) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
+            
+            return vehicules.stream()
+                    .map(vehicule -> {
+                        VehiculeDTO dto = vehiculeMapper.toDTO(vehicule);
+                        // Appliquer les décorateurs
+                        String description = displayService.afficherAvecDecorations(vehicule);
+                        dto.setDescriptionComplete(description);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération des véhicules en solde (promo)", e);
+            throw e;
+        }
+    }
+    
+    // NOUVELLE MÉTHODE : Récupérer tous les véhicules avec images pour admin
+    public List<VehiculeDTO> getAllVehiculesWithImages() {
+        try {
+            log.info("Récupération de tous les véhicules avec images");
+            
+            List<Vehicule> vehicules = vehiculeRepository.findAllWithImagesForCatalogue();
+            
+            log.info("{} véhicules avec images", vehicules.size());
+            
+            // Initialiser les options pour chaque véhicule
+            for (Vehicule vehicule : vehicules) {
+                vehicule.getOptions().size(); // Force l'initialisation
+            }
+            
+            return vehicules.stream()
+                    .map(vehicule -> {
+                        VehiculeDTO dto = vehiculeMapper.toDTO(vehicule);
+                        String description = displayService.afficherAvecDecorations(vehicule);
+                        dto.setDescriptionComplete(description);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération des véhicules avec images", e);
+            throw e;
+        }
     }
 }

@@ -18,7 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Societe extends Client {
     @Column(nullable = false)
-    @org.hibernate.annotations.ColumnDefault("")
+    // @org.hibernate.annotations.ColumnDefault("")
     private String password;
 
     @Column(nullable = false, unique = true)
