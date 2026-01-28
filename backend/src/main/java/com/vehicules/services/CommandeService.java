@@ -360,28 +360,6 @@ public class CommandeService {
         return commandeRepository.findByStatut(StatutCommande.ANNULEE.name());
     }
 
-    // Classe interne pour la requête de ligne de commande
-    public static class LigneCommandeRequest {
-        private Long vehiculeId;
-        private Integer quantite;
-        private List<Long> optionIds;
-
-        public LigneCommandeRequest() {}
-
-        public LigneCommandeRequest(Long vehiculeId, Integer quantite, List<Long> optionIds) {
-            this.vehiculeId = vehiculeId;
-            this.quantite = quantite;
-            this.optionIds = optionIds;
-        }
-
-        public Long getVehiculeId() { return vehiculeId; }
-        public void setVehiculeId(Long vehiculeId) { this.vehiculeId = vehiculeId; }
-
-        public Integer getQuantite() { return quantite; }
-        public void setQuantite(Integer quantite) { this.quantite = quantite; }
-
-        public List<Long> getOptionIds() { return optionIds; }
-        public void setOptionIds(List<Long> optionIds) { this.optionIds = optionIds; }
     // ========== MÉTHODES POUR LE PATTERN TEMPLATE ==========
     
     /**
@@ -414,5 +392,28 @@ public class CommandeService {
     }
     
     // ========== FIN DES MÉTHODES TEMPLATE ==========
+
+    // Classe interne pour la requête de ligne de commande
+    public static class LigneCommandeRequest {
+        private Long vehiculeId;
+        private Integer quantite;
+        private List<Long> optionIds;
+
+        public LigneCommandeRequest() {}
+
+        public LigneCommandeRequest(Long vehiculeId, Integer quantite, List<Long> optionIds) {
+            this.vehiculeId = vehiculeId;
+            this.quantite = quantite;
+            this.optionIds = optionIds;
+        }
+
+        public Long getVehiculeId() { return vehiculeId; }
+        public void setVehiculeId(Long vehiculeId) { this.vehiculeId = vehiculeId; }
+
+        public Integer getQuantite() { return quantite; }
+        public void setQuantite(Integer quantite) { this.quantite = quantite; }
+
+        public List<Long> getOptionIds() { return optionIds; }
+        public void setOptionIds(List<Long> optionIds) { this.optionIds = optionIds; }
     }
 }

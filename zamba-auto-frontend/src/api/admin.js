@@ -311,7 +311,14 @@ const adminService = {
   getCommandes: async (statut) => {
     try {
       console.log(`📦 [ADMIN] Récupération commandes${statut ? ` avec statut ${statut}` : ''}...`)
-      const url = statut ? `/admin/commandes?statut=${statut}` : '/admin/commandes'
+      
+      // Utiliser /api/commandes au lieu de /admin/commandes
+      let url = '/api/commandes'
+      if (statut) {
+        // Utiliser l'endpoint spécifique pour le statut
+        url = `/api/commandes/statut/${statut}`
+      }
+      
       const response = await api.get(url)
       console.log(`✅ [ADMIN] ${response.data?.length || 0} commandes récupérées`)
       return response.data
@@ -321,7 +328,18 @@ const adminService = {
         data: error.response?.data,
         message: error.message
       })
-      // Retourner tableau vide en cas d'erreur
+      return []
+    }
+  },
+
+  getAllCommandes: async () => {
+    try {
+      console.log('📦 [ADMIN] Récupération de toutes les commandes...')
+      const response = await api.get('/api/commandes')
+      console.log(`✅ [ADMIN] ${response.data?.length || 0} commandes récupérées`)
+      return response.data
+    } catch (error) {
+      console.error('❌ [ADMIN] Erreur getAllCommandes:', error)
       return []
     }
   },
@@ -329,7 +347,9 @@ const adminService = {
   updateCommandeStatut: async (id, statut) => {
     try {
       console.log(`📦 [ADMIN] Mise à jour statut commande ID ${id} -> ${statut}`)
-      const response = await api.put(`/admin/commandes/${id}/statut`, { statut })
+      
+      // Utiliser l'endpoint PUT existant dans CommandeController
+      const response = await api.put(`/api/commandes/${id}/statut`, { statut })
       console.log('✅ [ADMIN] Statut mis à jour:', response.data)
       return response.data
     } catch (error) {
@@ -341,6 +361,40 @@ const adminService = {
       throw new Error(error.response?.data?.error || error.response?.data?.message || 'Erreur lors de la mise à jour du statut')
     }
   },
+
+  // Méthodes pour les statuts spécifiques
+  getCommandesEnCours: async () => {
+    return adminService.getCommandes('EN_COURS')
+  },
+
+  getCommandesValidees: async () => {
+    return adminService.getCommandes('VALIDEE')
+  },
+
+  getCommandesPayees: async () => {
+    return adminService.getCommandes('PAYEE')
+  },
+
+  getCommandesLivrees: async () => {
+    return adminService.getCommandes('LIVREE')
+  },
+
+  getCommandesAnnulees: async () => {
+    return adminService.getCommandes('ANNULEE')
+  },
+
+// Méthode pour obtenir une commande spécifique
+getCommandeById: async (id) => {
+  try {
+    console.log(`📦 [ADMIN] Récupération commande ID ${id}...`)
+    const response = await api.get(`/api/commandes/${id}`)
+    console.log('✅ [ADMIN] Commande récupérée')
+    return response.data
+  } catch (error) {
+    console.error(`❌ [ADMIN] Erreur getCommandeById ${id}:`, error)
+    throw new Error('Erreur lors de la récupération de la commande')
+  }
+},
 
   // ========== GESTION DES OPTIONS ==========
   getOptions: async () => {
