@@ -67,12 +67,6 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<String> refreshToken(@RequestBody String refreshToken) {
-        // TODO: Implémenter le refresh token
-        return ResponseEntity.ok("Refresh token functionality - TODO");
-
-    }
     
 
 }

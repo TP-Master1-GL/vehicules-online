@@ -77,8 +77,8 @@ public class SecurityConfig {
                 ).permitAll()
 
                 // ========== ADMIN & MANAGER ==========
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/manager/**").hasAnyAuthority("ADMIN", "MANAGER")
                 
                 // ========== APIs AUTHENTIFIÉES SPÉCIFIQUES ==========
                 // NOTE: La règle générique "/api/**" plus bas rend déjà ces endpoints authentifiés
