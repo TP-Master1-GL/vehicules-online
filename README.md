@@ -1,42 +1,83 @@
-# Véhicules Online - Système de vente de véhicules
+# 🚗 Véhicules Online - Système de vente de véhicules
 
-## Description du projet
+## 📋 Description du projet
 Application web complète pour la vente de véhicules en ligne avec gestion de catalogue, panier, commandes et documents.
 
-**Implémentation complète des 11 Design Patterns**:
-1. **Abstract Factory** - Construction des objets du domaine (automobiles, scooters essence/électrique)
-2. **Builder** - Construction des liasses de documents nécessaires
-3. **Factory Method** - Création des commandes
-4. **Singleton** - Création de la liasse vierge de documents
-5. **Adapter** - Génération de documents PDF
-6. **Bridge** - Implémentation des formulaires HTML/widgets
-7. **Composite** - Représentation des sociétés clientes
-8. **Decorator & Observer** - Affichage du catalogue de véhicules
-9. **Iterator** - Parcours séquentiel du catalogue
-10. **Template Method** - Calcul des montants de commande
-11. **Command** - Application des soldes sur les véhicules
+## 🏗️ Architecture
+- **Backend**: Spring Boot (Java 17) avec 12 Design Patterns
+- **Frontend**: React 18 + TypeScript + Vite
+- **Base de données**: MySQL 8
+- **API**: REST JSON avec OpenAPI 3
+- **Conteneurisation**: Docker + Docker Compose
 
-## Architecture
-- **Backend**: Spring Boot (Java 17) avec JPA/Hibernate
-- **Frontend**: React 18 + Vite + TailwindCSS
-- **Base de données**:  H2 
-- **API**: REST JSON avec OpenAPI/Swagger
-- **Sécurité**: JWT + Spring Security
-- **Design Patterns**: 11 patterns implémentés selon les spécifications
+## 🚀 Installation rapide
 
-##  Démarrage Rapide
+### Prérequis
+- Java 17+
+- Node.js 18+
+- Docker & Docker Compose
+- MySQL 8
 
-### Avec H2 
+### 1. Cloner le projet
+```bash
+git clone https://github.com/votre-username/vehicules-online.git
+cd vehicules-online
 
-./run-h2.sh
+2. Démarrer manuellement
+Backend:
+bash
+cd backend
+./run.sh
+Frontend:
+bash
+cd frontend
 ./start-frontend.sh
+📁 Structure du projet
+text
+vehicules-online/
+├── backend/                 # Spring Boot Application
+│   ├── src/main/java/com/vehicules/
+│   │   ├── patterns/       # 11 Design Patterns
+│   │   ├── controllers/    # REST Controllers
+│   │   ├── services/       # Business Logic
+│   │   ├── entities/       # JPA Entities
+│   │   └── repositories/   # Data Access
+│   └── pom.xml
+├── frontend/               # React Application
+│   ├── src/
+│   │   ├── components/     # React Components
+│   │   ├── pages/         # Application Pages
+│   │   ├── services/      # API Services
+│   │   └── contexts/      # React Contexts
+│   └── package.json
+├── docker/                 # Configuration Docker
+├── scripts/               # Scripts utilitaires
+└── docs/                  # Documentation
+🌐 Accès aux services
+Frontend: http://localhost:3000
+
+Backend API: http://localhost:8080
+
+Swagger UI: http://localhost:8080/swagger-ui.html
 
 
-## URLs d'Accès
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080
 
 
 
 
 
+👥 Équipe de développement
+Johnny: Architecte full-stack + UI Frontend
+
+Laetitia: Documents + backend patterns
+
+Delphan: Backend Patterns 
+
+Ronel: Services métier backend
+
+Audrey: Patterns structurels backend
+
+
+
+📄 License
+MIT
