@@ -92,8 +92,8 @@ const Home = () => {
 
 
 
-   
-
+      {/*stats sections*/}
+      <StatsSection />
        {/* CTA Buttons */}
        <CTAButtons />
 
