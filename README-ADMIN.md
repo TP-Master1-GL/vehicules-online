@@ -3,15 +3,11 @@
 ## 🚀 Démarrage du Backend
 
 ### Option 1 : Script automatique (Recommandé)
-```bash
-./start-backend.sh
-```
+./run.sh
 
-### Option 2 : Démarrage manuel
-```bash
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=h2 -Dserver.port=8080
-```
+
+
+
 
 ## 👤 Comptes Administrateur
 
@@ -39,10 +35,10 @@ Le système crée automatiquement les comptes suivants au démarrage :
 
 1. **Démarrer le backend** (voir ci-dessus)
 2. **Démarrer le frontend** :
-   ```bash
+  
    cd zamba-auto-frontend
    npm run dev
-   ```
+   
 3. **Accéder à la page de connexion** : http://localhost:3000/login
 4. **Se connecter avec** :
    - Email : `admin@vehicules-online.com`
@@ -66,7 +62,7 @@ curl http://localhost:8080/api/test
 ## 🐛 Résolution de problèmes
 
 ### Erreur : "connect ECONNREFUSED 127.0.0.1:8080"
-**Solution** : Le backend n'est pas démarré. Utilisez `./start-backend.sh` ou démarrez-le manuellement.
+**Solution** : Le backend n'est pas démarré. Utilisez `./run.sh` ou démarrez-le manuellement.
 
 ### Erreur : "Bad credentials" (400)
 **Solutions** :
@@ -95,8 +91,7 @@ Recherchez dans les logs :
 - **Frontend** : 3000
 
 ### Base de données
-- **H2** (développement) : Base en mémoire, recréée à chaque démarrage
-- **MySQL** (production) : Utiliser le profil `mysql`
+- **MySQL**  : Utiliser le profil `mysql`
 
 ## 📞 Support
 

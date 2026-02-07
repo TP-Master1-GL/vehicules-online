@@ -25,11 +25,11 @@ cd vehicules-online
 
 2. Démarrer manuellement
 Backend:
-bash
+
 cd backend
 ./run.sh
 Frontend:
-bash
+
 cd frontend
 ./start-frontend.sh
 📁 Structure du projet

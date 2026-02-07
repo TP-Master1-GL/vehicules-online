@@ -47,6 +47,7 @@ public class PdfGenerationService {
                     throw new IllegalArgumentException("La commande n'est pas une commande crédit");
                 }
                 break;
+             
             default:
                 throw new IllegalArgumentException("Type de document non supporté: " + type);
         }
