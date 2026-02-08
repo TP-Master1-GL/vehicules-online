@@ -1,9 +1,7 @@
 package com.vehicules.services;
 
 import com.vehicules.core.entities.Client;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -61,8 +59,16 @@ public class JwtService {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        try {
+            final Claims claims = extractAllClaims(token);
+            return claimsResolver.apply(claims);
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expiré lors de l'extraction de claim: {}", e.getMessage());
+            throw e;
+        } catch (JwtException e) {
+            log.error("Erreur JWT lors de l'extraction de claim: {}", e.getMessage());
+            throw e;
+        }
     }
 
     public String generateToken(Client client) {
@@ -106,17 +112,78 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expiré pour l'utilisateur: {}", userDetails.getUsername());
+            return false;
+        } catch (JwtException e) {
+            log.error("Token invalide: {}", e.getMessage());
+            return false;
+        }
     }
 
     public boolean isTokenValid(String token, Client client) {
-        final String username = extractUsername(token);
-        return (username.equals(client.getEmail())) && !isTokenExpired(token);
+        try {
+            final String username = extractUsername(token);
+            return (username.equals(client.getEmail())) && !isTokenExpired(token);
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expiré pour le client: {}", client.getEmail());
+            return false;
+        } catch (JwtException e) {
+            log.error("Token invalide pour le client {}: {}", client.getEmail(), e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Vérifie si un token expiré peut être rafraîchi
+     * Permet de rafraîchir un token expiré jusqu'à 7 jours après son expiration
+     */
+    public boolean isTokenValidForRefresh(String token, Client client) {
+        try {
+            // Vérifier si le token appartient bien à l'utilisateur
+            final String username = extractUsername(token);
+            if (!username.equals(client.getEmail())) {
+                log.warn("Token ne correspond pas à l'utilisateur pour rafraîchissement: {} vs {}", 
+                        username, client.getEmail());
+                return false;
+            }
+            
+            // Extraire les claims sans vérifier l'expiration
+            Claims claims = extractAllClaimsIgnoringExpiration(token);
+            
+            // Vérifier que le token n'est pas trop vieux pour être rafraîchi
+            // (par exemple, on ne rafraîchit pas les tokens expirés depuis plus de 7 jours)
+            Date expiration = claims.getExpiration();
+            long maxAgeForRefresh = 7 * 24 * 60 * 60 * 1000L; // 7 jours en millisecondes
+            long timeSinceExpiration = new Date().getTime() - expiration.getTime();
+            
+            boolean isValid = timeSinceExpiration <= maxAgeForRefresh;
+            
+            if (!isValid) {
+                log.warn("Token trop vieux pour être rafraîchi: expiré depuis {} jours", 
+                        timeSinceExpiration / (24 * 60 * 60 * 1000));
+            }
+            
+            return isValid;
+            
+        } catch (JwtException e) {
+            log.error("Erreur lors de la vérification du token pour rafraîchissement: {}", e.getMessage());
+            return false;
+        }
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (JwtException e) {
+            log.error("Erreur lors de la vérification de l'expiration du token: {}", e.getMessage());
+            return true;
+        }
     }
 
     private Date extractExpiration(String token) {
@@ -131,9 +198,53 @@ public class JwtService {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (Exception e) {
-            log.error("Erreur lors de l'extraction des claims du token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expiré: {}", e.getMessage());
             throw e;
+        } catch (MalformedJwtException e) {
+            log.error("Token malformé: {}", e.getMessage());
+            throw e;
+        } catch (SecurityException e) {
+            log.error("Erreur de sécurité lors du parsing du token: {}", e.getMessage());
+            throw e;
+        } catch (IllegalArgumentException e) {
+            log.error("Token vide ou null: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Erreur inattendue lors de l'extraction des claims du token: {}", e.getMessage());
+            throw new JwtException("Erreur lors du traitement du token", e);
+        }
+    }
+    
+    /**
+     * Extrait les claims d'un token en ignorant son expiration
+     * Utile pour rafraîchir les tokens expirés
+     */
+    private Claims extractAllClaimsIgnoringExpiration(String token) {
+        try {
+            return Jwts
+                    .parserBuilder()
+                    .setSigningKey(getSignInKey())
+                    .setAllowedClockSkewSeconds(60 * 60 * 24 * 7) // Permettre 7 jours de décalage
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            // En mode "ignore expiration", on retourne quand même les claims
+            log.debug("Token expiré mais claims extraits pour rafraîchissement");
+            return e.getClaims();
+        } catch (MalformedJwtException e) {
+            log.error("Token malformé: {}", e.getMessage());
+            throw e;
+        } catch (SecurityException e) {
+            log.error("Erreur de sécurité lors du parsing du token: {}", e.getMessage());
+            throw e;
+        } catch (IllegalArgumentException e) {
+            log.error("Token vide ou null: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Erreur inattendue lors de l'extraction des claims (mode expiration ignorée): {}", e.getMessage());
+            throw new JwtException("Erreur lors du traitement du token", e);
         }
     }
 
@@ -143,7 +254,7 @@ public class JwtService {
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
             log.error("Erreur lors de la génération de la clé de signature JWT: {}", e.getMessage());
-            throw e;
+            throw new RuntimeException("Erreur de configuration JWT", e);
         }
     }
 
@@ -218,6 +329,51 @@ public class JwtService {
         } catch (Exception e) {
             log.error("Erreur lors de l'extraction des informations du token: {}", e.getMessage());
             return new HashMap<>();
+        }
+    }
+    
+    /**
+     * Vérifie si le token a été manipulé ou corrompu
+     */
+    public boolean isTokenSignatureValid(String token) {
+        try {
+            Jwts.parserBuilder()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            log.warn("Signature du token invalide: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Renouvelle un token expiré si possible
+     */
+    public String renewExpiredToken(String expiredToken, Client client) {
+        try {
+            // Vérifier si le token expiré peut être rafraîchi
+            if (!isTokenValidForRefresh(expiredToken, client)) {
+                throw new JwtException("Token trop vieux pour être rafraîchi");
+            }
+            
+            // Extraire les claims de l'ancien token
+            Claims oldClaims = extractAllClaimsIgnoringExpiration(expiredToken);
+            
+            // Générer un nouveau token avec les mêmes claims mais une nouvelle date d'expiration
+            Map<String, Object> newClaims = new HashMap<>();
+            newClaims.put("userId", oldClaims.get("userId"));
+            newClaims.put("role", oldClaims.get("role"));
+            newClaims.put("nom", oldClaims.get("nom"));
+            newClaims.put("prenom", oldClaims.get("prenom"));
+            newClaims.put("clientType", oldClaims.get("clientType"));
+            
+            return generateToken(newClaims, client);
+            
+        } catch (Exception e) {
+            log.error("Erreur lors du renouvellement du token: {}", e.getMessage());
+            throw new JwtException("Impossible de renouveler le token", e);
         }
     }
 }
