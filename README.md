@@ -20,16 +20,17 @@ Application web complète pour la vente de véhicules en ligne avec gestion de c
 
 ### 1. Cloner le projet
 ```bash
-git clone https://github.com/votre-username/vehicules-online.git
+git clone https://github.com/TP-Master1-GL/vehicules-online.git
 cd vehicules-online
-
 2. Démarrer manuellement
 Backend:
 
+bash
 cd backend
 ./run.sh
 Frontend:
 
+bash
 cd frontend
 ./start-frontend.sh
 📁 Structure du projet
@@ -60,25 +61,18 @@ Backend API: http://localhost:8080
 
 Swagger UI: http://localhost:8080/swagger-ui.html
 
-
-
-
-
-
-
 👥 Équipe de développement
 Johnny: Architecte full-stack + UI Frontend
 
 Laetitia: Documents + backend patterns
 
-Delphan: Backend Patterns 
+Delphan: Backend Patterns
 
 Ronel: Services métier backend
 
 Audrey: Patterns structurels backend
 
-
-
 📄 License
 MIT
+
 
